@@ -170,6 +170,60 @@
         ]
     },
     {
+        "name": "easyswoole/curl",
+        "version": "1.0.0",
+        "version_normalized": "1.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/easy-swoole/curl.git",
+            "reference": "5b50ea0d68801b1617f8fe6dd6f22a06d831a383"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/easy-swoole/curl/zipball/5b50ea0d68801b1617f8fe6dd6f22a06d831a383",
+            "reference": "5b50ea0d68801b1617f8fe6dd6f22a06d831a383",
+            "shasum": "",
+            "mirrors": [
+                {
+                    "url": "https://dl.laravel-china.org/%package%/%reference%.%type%",
+                    "preferred": true
+                }
+            ]
+        },
+        "require": {
+            "php": ">=7.1.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^5.6"
+        },
+        "time": "2018-05-25T06:08:22+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "EasySwoole\\Curl\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "YF",
+                "email": "291323003@qq.com"
+            }
+        ],
+        "description": "An efficient swoole framework",
+        "homepage": "https://www.easyswoole.com/",
+        "keywords": [
+            "async",
+            "easyswoole",
+            "framework",
+            "swoole"
+        ]
+    },
+    {
         "name": "easyswoole/easyswoole",
         "version": "3.x-dev",
         "version_normalized": "3.9999999.9999999.9999999-dev",
@@ -329,6 +383,60 @@
         "autoload": {
             "psr-4": {
                 "EasySwoole\\Http\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "YF",
+                "email": "291323003@qq.com"
+            }
+        ],
+        "description": "An efficient swoole framework",
+        "homepage": "https://www.easyswoole.com/",
+        "keywords": [
+            "async",
+            "easyswoole",
+            "framework",
+            "swoole"
+        ]
+    },
+    {
+        "name": "easyswoole/mysqli",
+        "version": "1.1.12",
+        "version_normalized": "1.1.12.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/easy-swoole/mysqli.git",
+            "reference": "2685d19dc59f65c1556ded3310707ad95b363b53"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/easy-swoole/mysqli/zipball/2685d19dc59f65c1556ded3310707ad95b363b53",
+            "reference": "2685d19dc59f65c1556ded3310707ad95b363b53",
+            "shasum": "",
+            "mirrors": [
+                {
+                    "url": "https://dl.laravel-china.org/%package%/%reference%.%type%",
+                    "preferred": true
+                }
+            ]
+        },
+        "require": {
+            "easyswoole/spl": "^1.0"
+        },
+        "require-dev": {
+            "easyswoole/swoole-ide-helper": "dev-master"
+        },
+        "time": "2019-01-26T03:46:32+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "EasySwoole\\Mysqli\\": "src/"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
