@@ -8,21 +8,30 @@
 
 namespace EasySwoole\Http\AbstractInterface;
 
+use App\Container\Container;
+use EasySwoole\EasySwoole\Config;
+use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\Message\Status;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
 use EasySwoole\Http\Session\SessionDriver;
+use EasySwoole\Utility\SnowFlake;
 use EasySwoole\Validate\Validate;
+use PhpParser\Node\Stmt\Static_;
 
 abstract class Controller
 {
     private $request;
     private $response;
     private $actionName;
-    private $session;
+    public $session;
     private $sessionDriver = SessionDriver::class;
     private $allowMethods = [];
     private $defaultProperties = [];
+    protected $middleware = []; //继承的中间件
+    private $container; //容器对象
+    protected $middlewareExcept = []; //中间件要排除的方法
+    private $csrf_token = 'csrf_token'; //csrf_token
 
     function __construct()
     {
@@ -53,6 +62,8 @@ abstract class Controller
                 $this->defaultProperties[$name] = $this->$name;
             }
         }
+        //获取容器单例
+        $this->container = Container::getInstance();
     }
 
     abstract function index();
@@ -86,7 +97,42 @@ abstract class Controller
 
     protected function onRequest(?string $action): ?bool
     {
+        //设置csrf_token
+        $this->setCsrfToken();
+
+        //调用中间件，全局排除的方法不验证
+        if (!empty($this->middleware) && !in_array(Static::class . '\\' . $action, $this->middlewareExcept)) {
+
+            foreach ($this->middleware as $pipe) {
+
+                $ins = $this->container->get($pipe);
+
+                //中间件局部排除的方法，不验证
+                if (in_array(Static::class . '\\' . $action, $ins->getExcept())) {
+                    continue;
+                }
+
+                if (!$ins->exec($this->request, $this->response, $this->session)) {
+                    $this->writeJson(200, '中间件验证失败', sprintf("中间件%s:验证失败,原因：%s", $pipe, $ins->getError()));
+                    return false;
+                }
+
+            }
+        }
+
         return true;
+    }
+
+    /**
+     * 设置csrf_token
+     */
+    public function setCsrfToken()
+    {
+        $session = $this->session();
+        $session->start();
+        $csrf_token = $session->get('csrf_token');
+        //csrf_token已存在则不重复设置
+        empty($csrf_token) && $session->set('csrf_token', SnowFlake::make(16));
     }
 
     protected function getActionName(): ?string
@@ -94,7 +140,7 @@ abstract class Controller
         return $this->actionName;
     }
 
-    public function __hook(?string $actionName, Request $request, Response $response):? string
+    public function __hook(?string $actionName, Request $request, Response $response): ?string
     {
         $forwardPath = null;
         $this->request = $request;
@@ -107,6 +153,8 @@ abstract class Controller
                 } else {
                     $forwardPath = $this->actionNotFound($actionName);
                 }
+            } else {
+                $this->response->end();
             }
         } catch (\Throwable $throwable) {
             //若没有重构onException，直接抛出给上层
@@ -124,7 +172,7 @@ abstract class Controller
                 }
             }
         }
-        if(is_string($forwardPath)){
+        if (is_string($forwardPath)) {
             return $forwardPath;
         }
         return null;

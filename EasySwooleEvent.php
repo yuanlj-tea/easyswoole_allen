@@ -9,6 +9,7 @@
 namespace EasySwoole\EasySwoole;
 
 
+use App\Process\HotReload;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
 use EasySwoole\Http\Request;
@@ -21,14 +22,23 @@ class EasySwooleEvent implements Event
     public static function initialize()
     {
         date_default_timezone_set('Asia/Shanghai');
+        //加载自定义配置
         self::loadConf();
-        $conf = Config::getInstance()->getConf();
+
 
     }
 
     public static function mainServerCreate(EventRegister $register)
     {
 
+        $conf = Config::getInstance()->getConf();//获取配置文件
+        $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
+
+        $isDev = Core::getInstance()->isDev();
+        if ($isDev) {
+            //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
+            $swooleServer->addProcess((new HotReload('HotReload', ['disableInotify' => false]))->getProcess());
+        }
     }
 
     public static function onRequest(Request $request, Response $response): bool
