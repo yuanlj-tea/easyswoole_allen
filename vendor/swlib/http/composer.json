@@ -1,0 +1,50 @@
+{
+  "name": "swlib/http",
+  "type": "library",
+  "keywords": [
+    "php",
+    "swoole",
+    "http",
+    "psr7"
+  ],
+  "description": "Swlib-HTTP base class repository, PSR implementation",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "twosee",
+      "email": "twose@qq.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/swlib/http/issues"
+  },
+  "require": {
+    "php": ">=7.0",
+    "psr/http-message": "~1.0"
+  },
+  "autoload": {
+    "files": [
+      "src/functions.php"
+    ],
+    "psr-4": {
+      "Swlib\\Http\\": "src"
+    }
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.laravel-china.org/"
+    }
+  },
+  "require-dev": {
+    "eaglewu/swoole-ide-helper": "dev-master",
+    "phpunit/phpunit": "~7"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "./vendor/bin/phpunit -c phpunit.xml"
+  }
+}

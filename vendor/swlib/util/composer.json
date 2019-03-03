@@ -1,0 +1,46 @@
+{
+  "name": "swlib/util",
+  "type": "library",
+  "keywords": [
+    "php",
+    "swoole",
+    "swlib",
+    "util"
+  ],
+  "description": "Swlib Toolkit",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "twosee",
+      "email": "twose@qq.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/swlib/util/issues"
+  },
+  "require": {
+    "php": ">=7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Swlib\\Util\\": "src"
+    }
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.laravel-china.org/"
+    }
+  },
+  "require-dev": {
+    "eaglewu/swoole-ide-helper": "dev-master",
+    "phpunit/phpunit": "~7"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "scripts": {
+    "test": "./phpunit -c phpunit.xml"
+  }
+}

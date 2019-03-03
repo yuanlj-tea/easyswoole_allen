@@ -6,4 +6,6 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Swlib\\Saber' => $vendorDir . '/swlib/saber/src/Saber.php',
+    'Swlib\\SaberGM' => $vendorDir . '/swlib/saber/src/SaberGM.php',
 );

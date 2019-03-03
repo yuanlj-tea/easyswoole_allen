@@ -10,6 +10,9 @@ namespace EasySwoole\EasySwoole;
 
 
 use App\Process\HotReload;
+use App\Utility\Pool\MysqlPool;
+use App\Utility\Pool\RedisPool;
+use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
 use EasySwoole\Http\Request;
@@ -22,8 +25,20 @@ class EasySwooleEvent implements Event
     public static function initialize()
     {
         date_default_timezone_set('Asia/Shanghai');
+
         //加载自定义配置
         self::loadConf();
+        $conf = Config::getInstance();//获取配置文件
+
+        //注册mysql数据库连接池
+        PoolManager::getInstance()
+            ->register(MysqlPool::class,$conf->getConf('MYSQL.POOL_MAX_NUM'))
+            ->setMinObjectNum((int)$conf->getConf('MYSQL.POOL_MIN_NUM'));
+
+        //注册redis连接池
+        PoolManager::getInstance()
+            ->register(RedisPool::class,$conf->getConf('REDIS.POOL_MAX_NUM'))
+            ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
 
 
     }

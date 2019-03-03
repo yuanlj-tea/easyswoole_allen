@@ -9,6 +9,8 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
     public static $files = array (
         '253c157292f75eb38082b5acb06f3f01' => __DIR__ . '/..' . '/nikic/fast-route/src/functions.php',
         'bd9634f2d41831496de0d3dfe4c94881' => __DIR__ . '/..' . '/symfony/polyfill-php56/bootstrap.php',
+        '045cd5d476702c3529ef3e1b9f615e70' => __DIR__ . '/..' . '/swlib/http/src/functions.php',
+        '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => __DIR__ . '/..' . '/swlib/saber/src/include/functions.php',
         'd0dca54c1bcbed938a539389e43e6364' => __DIR__ . '/../..' . '/App/helpers.php',
     );
 
@@ -17,10 +19,14 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             'Symfony\\Polyfill\\Util\\' => 22,
             'Symfony\\Polyfill\\Php56\\' => 23,
+            'Swlib\\Util\\' => 11,
+            'Swlib\\Saber\\' => 12,
+            'Swlib\\Http\\' => 11,
             'SuperClosure\\' => 13,
         ),
         'P' => 
         array (
+            'Psr\\Http\\Message\\' => 17,
             'PhpParser\\' => 10,
         ),
         'F' => 
@@ -63,9 +69,25 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php56',
         ),
+        'Swlib\\Util\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/util/src',
+        ),
+        'Swlib\\Saber\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/saber/src',
+        ),
+        'Swlib\\Http\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/swlib/http/src',
+        ),
         'SuperClosure\\' => 
         array (
             0 => __DIR__ . '/..' . '/jeremeamia/SuperClosure/src',
+        ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'PhpParser\\' => 
         array (
@@ -141,11 +163,17 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         ),
     );
 
+    public static $classMap = array (
+        'Swlib\\Saber' => __DIR__ . '/..' . '/swlib/saber/src/Saber.php',
+        'Swlib\\SaberGM' => __DIR__ . '/..' . '/swlib/saber/src/SaberGM.php',
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$classMap;
 
         }, null, ClassLoader::class);
     }
