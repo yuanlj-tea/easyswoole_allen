@@ -27,7 +27,7 @@ class EasySwooleEvent implements Event
         date_default_timezone_set('Asia/Shanghai');
 
         //加载自定义配置
-        self::loadConf();
+        // self::loadConf();
         $conf = Config::getInstance();//获取配置文件
 
         //注册mysql数据库连接池
@@ -46,7 +46,7 @@ class EasySwooleEvent implements Event
     public static function mainServerCreate(EventRegister $register)
     {
 
-        $conf = Config::getInstance()->getConf();//获取配置文件
+        $conf = Config::getInstance();//获取配置文件
         $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
 
         $isDev = Core::getInstance()->isDev();
