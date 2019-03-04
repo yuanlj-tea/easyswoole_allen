@@ -22,7 +22,7 @@ class ValidateCsrfToken extends MiddlewareAbstract
     ];
 
     /**
-     * 测试中间件
+     * 验证csrf_token中间件
      * @param Request $request
      * @param Response $response
      * @return bool
