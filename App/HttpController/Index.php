@@ -35,13 +35,6 @@ class Index extends Controller
 
     public function testSaber()
     {
-        [$html] = SaberGM::list([
-            'uri' => [
-                'http://gold.kingnet.com'
-            ],
-        ]);
-        var_dump($html->getParsedHtml()->getElementsByTagName('h1')->item(0)->textContent);
-
         /*$session = Saber::session([
             'base_uri' => 'http://www.blog.com',
             'redirect' => 0

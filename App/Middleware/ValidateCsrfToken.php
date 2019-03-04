@@ -29,7 +29,7 @@ class ValidateCsrfToken extends MiddlewareAbstract
      */
     public function exec(Request $request, Response $response, SessionDriver $session): bool
     {
-        $response->withHeader("Content-Type", "application/json; charset=utf-8");
+        // $response->withHeader("Content-Type", "application/json; charset=utf-8");
 
         $csrf_token = $session->get('csrf_token');
         $user_token = $request->getRequestParam('token');

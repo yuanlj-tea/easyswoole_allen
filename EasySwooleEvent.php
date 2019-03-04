@@ -15,9 +15,11 @@ use App\Utility\Pool\RedisPool;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
+use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
 use EasySwoole\Utility\File;
+use EasySwoole\FastCache\CacheProcess;
 
 class EasySwooleEvent implements Event
 {
@@ -54,10 +56,40 @@ class EasySwooleEvent implements Event
             //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
             $swooleServer->addProcess((new HotReload('HotReload', ['disableInotify' => false]))->getProcess());
         }
+
+        /**
+         * fastCache 数据落地方案
+         */
+        Cache::getInstance()->setTickInterval(5 * 1000);
+        Cache::getInstance()->setOnTick(function (CacheProcess $cacheProcess) {
+            $data = [
+                'data'  => $cacheProcess->getSplArray(),
+                'queue' => $cacheProcess->getQueueArray()
+            ];
+            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
+            File::createFile($path, serialize($data));
+        });
+        Cache::getInstance()->setOnStart(function (CacheProcess $cacheProcess) {
+            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
+            if (is_file($path)) {
+                $data = unserialize(file_get_contents($path));
+                $cacheProcess->setQueueArray($data['queue']);
+                $cacheProcess->setSplArray($data['data']);
+            }
+        });
+        Cache::getInstance()->setOnShutdown(function (CacheProcess $cacheProcess) {
+            $data = [
+                'data'  => $cacheProcess->getSplArray(),
+                'queue' => $cacheProcess->getQueueArray()
+            ];
+            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
+            File::createFile($path, serialize($data));
+        });
     }
 
     public static function onRequest(Request $request, Response $response): bool
     {
+        $response->withHeader('Content-type','application/json;charset=utf-8');
         return true;
     }
 
