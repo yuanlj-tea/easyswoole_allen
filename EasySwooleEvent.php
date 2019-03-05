@@ -32,12 +32,12 @@ class EasySwooleEvent implements Event
 
         //注册mysql数据库连接池
         PoolManager::getInstance()
-            ->register(MysqlPool::class,$conf->getConf('MYSQL.POOL_MAX_NUM'))
+            ->register(MysqlPool::class, $conf->getConf('MYSQL.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('MYSQL.POOL_MIN_NUM'));
 
         //注册redis连接池
         PoolManager::getInstance()
-            ->register(RedisPool::class,$conf->getConf('REDIS.POOL_MAX_NUM'))
+            ->register(RedisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
 
 
@@ -45,11 +45,20 @@ class EasySwooleEvent implements Event
 
     public static function mainServerCreate(EventRegister $register)
     {
+        //注册onWorkerStart回调事件
+        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) {
+            //在每个worker进程启动的时候，预创建redis连接池
+            if ($server->taskworker == false) {
+                //预创建数量,必须小于连接池最大数量
+                PoolManager::getInstance()->getPool(RedisPool::class)->preLoad(6);
+            }
+            // echo "worker:{$workerId} start\n";
+        });
 
         $conf = Config::getInstance();//获取配置文件
         $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
-
         $isDev = Core::getInstance()->isDev();
+
         if ($isDev) {
             //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
             $swooleServer->addProcess((new HotReload('HotReload', ['disableInotify' => false]))->getProcess());
