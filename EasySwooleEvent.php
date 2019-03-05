@@ -69,7 +69,7 @@ class EasySwooleEvent implements Event
         /**
          * fastCache 数据落地方案
          */
-        Cache::getInstance()->setTickInterval(5 * 1000);
+        /*Cache::getInstance()->setTickInterval(5 * 1000);
         Cache::getInstance()->setOnTick(function (CacheProcess $cacheProcess) {
             $data = [
                 'data'  => $cacheProcess->getSplArray(),
@@ -93,7 +93,7 @@ class EasySwooleEvent implements Event
             ];
             $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
             File::createFile($path, serialize($data));
-        });
+        });*/
     }
 
     public static function onRequest(Request $request, Response $response): bool

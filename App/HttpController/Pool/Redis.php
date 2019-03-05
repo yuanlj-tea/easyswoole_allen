@@ -16,7 +16,7 @@ class Redis extends BaseRedis
     {
         $redis = $this->getRedis();
 
-        $redis->set('name','zs');
+        $redis->set('name','wz');
         $val = $redis->get('name');
         $this->writeJson(200,$val);
     }
