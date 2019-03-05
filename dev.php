@@ -42,7 +42,7 @@ return [
         ]
     ],
     'FAST_CACHE' => [
-        'PROCESS_NUM' => 0,
+        'PROCESS_NUM' => 5,
         'BACKLOG' => 256,
     ],
     'DISPLAY_ERROR' => true,
@@ -58,15 +58,15 @@ return [
         'database'      => 'test',
         'POOL_MAX_NUM'  => '20',
         'POOL_MIN_NUM'  => '5',
-        'POOL_TIME_OUT' => '0.1',
+        'POOL_TIME_OUT' => '0.5',
     ],
     //redis config
     'REDIS' => [
         'host'          => '127.0.0.1',
         'port'          => '6379',
-        'auth'          => '',
+        'auth'          => '123456',
         'POOL_MAX_NUM'  => '20',
         'POOL_MIN_NUM'  => '5',
-        'POOL_TIME_OUT' => '0.1',
+        'POOL_TIME_OUT' => '0.5',
     ],
 ];

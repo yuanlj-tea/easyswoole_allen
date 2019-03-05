@@ -20,7 +20,7 @@ class RedisObject extends Redis implements PoolObjectInterface
 
     public function objectRestore()
     {
-
+        // echo "objectRestore\n";
     }
 
     public function beforeUse(): bool
