@@ -459,6 +459,64 @@
         ]
     },
     {
+        "name": "easyswoole/rpc",
+        "version": "2.0.5",
+        "version_normalized": "2.0.5.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/easy-swoole/rpc.git",
+            "reference": "6d2b68559052fb8941e03ba16352e04e62477d04"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/easy-swoole/rpc/zipball/6d2b68559052fb8941e03ba16352e04e62477d04",
+            "reference": "6d2b68559052fb8941e03ba16352e04e62477d04",
+            "shasum": "",
+            "mirrors": [
+                {
+                    "url": "https://dl.laravel-china.org/%package%/%reference%.%type%",
+                    "preferred": true
+                }
+            ]
+        },
+        "require": {
+            "easyswoole/component": "^1.1",
+            "easyswoole/spl": "^1.0",
+            "easyswoole/utility": "^1.0",
+            "ext-swoole": ">=4.0.3",
+            "php": ">=7.1.0"
+        },
+        "require-dev": {
+            "easyswoole/swoole-ide-helper": "dev-master"
+        },
+        "time": "2018-12-26T05:48:23+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "EasySwoole\\Rpc\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "Apache-2.0"
+        ],
+        "authors": [
+            {
+                "name": "YF",
+                "email": "291323003@qq.com"
+            }
+        ],
+        "description": "An efficient swoole framework",
+        "homepage": "https://www.easyswoole.com/",
+        "keywords": [
+            "async",
+            "easyswoole",
+            "framework",
+            "swoole"
+        ]
+    },
+    {
         "name": "easyswoole/socket",
         "version": "1.1.7",
         "version_normalized": "1.1.7.0",

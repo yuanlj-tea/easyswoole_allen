@@ -20,6 +20,7 @@ return array(
     'EasySwoole\\Trace\\' => array($vendorDir . '/easyswoole/trace/src'),
     'EasySwoole\\Spl\\' => array($vendorDir . '/easyswoole/spl/src'),
     'EasySwoole\\Socket\\' => array($vendorDir . '/easyswoole/socket/src'),
+    'EasySwoole\\Rpc\\' => array($vendorDir . '/easyswoole/rpc/src'),
     'EasySwoole\\Mysqli\\' => array($vendorDir . '/easyswoole/mysqli/src'),
     'EasySwoole\\Http\\' => array($vendorDir . '/easyswoole/http/src'),
     'EasySwoole\\FastCache\\' => array($vendorDir . '/easyswoole/fast-cache/src'),

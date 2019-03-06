@@ -40,6 +40,7 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
             'EasySwoole\\Trace\\' => 17,
             'EasySwoole\\Spl\\' => 15,
             'EasySwoole\\Socket\\' => 18,
+            'EasySwoole\\Rpc\\' => 15,
             'EasySwoole\\Mysqli\\' => 18,
             'EasySwoole\\Http\\' => 16,
             'EasySwoole\\FastCache\\' => 21,
@@ -116,6 +117,10 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         'EasySwoole\\Socket\\' => 
         array (
             0 => __DIR__ . '/..' . '/easyswoole/socket/src',
+        ),
+        'EasySwoole\\Rpc\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/easyswoole/rpc/src',
         ),
         'EasySwoole\\Mysqli\\' => 
         array (
