@@ -49,11 +49,18 @@ class Index extends Controller
 
     }
 
+    public function upload()
+    {
+        $request = $this->request();
+        $file = $request->getUploadedFile('img')->moveTo('/tmp/test.jpg');
+        p($file);
+    }
+
     public function onRequest(? string $action): ?bool
     {
         //全局要排除中间件的方法
         $this->middlewareExcept = [
-            // Index::class.'\getCsrfToken',
+            Index::class.'\getCsrfToken',
         ];
         //要继承的中间件
         $this->middleware = [
