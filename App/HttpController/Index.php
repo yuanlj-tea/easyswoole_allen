@@ -35,6 +35,39 @@ class Index extends Controller
 
     public function testSaber()
     {
+
+
+
+        [$html] = SaberGM::list([
+            'uri' => [
+                'http://www.blog.com/sso/server/login'
+            ]
+        ]);
+        var_dump($html->getParsedDomObject()->getElementsByTagName('button')->item(0)->getAttribute('id'));
+        // var_dump($html->getParsedHtml()->getElementsByTagName('input')->item(0)->textContent);
+        $this->response()->write('ok');
+        return;
+        [$json, $xml, $html] = SaberGM::list([
+            'uri' => [
+                'http://httpbin.org/get',
+                'http://www.w3school.com.cn/example/xmle/note.xml',
+                'http://httpbin.org/html'
+            ]
+        ]);
+        var_dump($json->getParsedJson());
+        var_dump($json->getParsedJsonObject());
+        var_dump($xml->getParsedXml());
+        var_dump($html->getParsedHtml()->getElementsByTagName('h1')->item(0)->textContent);
+        //测试自动登录
+        $session = Saber::session([
+            'base_uri' => 'http://www.blog.com',
+            'redirect' => 0
+        ]);
+        $session->post('/sso/server/test');
+        $res = $session->get('/sso/server/test');
+        echo $res->body;
+        $this->response()->write($res->body);
+
         /*$session = Saber::session([
             'base_uri' => 'http://www.blog.com',
             'redirect' => 0
