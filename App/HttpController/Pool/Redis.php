@@ -15,7 +15,8 @@ class Redis extends BaseRedis
     public function testRedis()
     {
         $redis = $this->getRedis();
-
+        $res = $redis->hGetAll('SSO_SERVER_TOKEN');
+        pp($res);
         $redis->set('name','wz');
         $val = $redis->get('name');
         $this->writeJson(200,$val);

@@ -56,3 +56,12 @@ if(!function_exists('is_cli')){
         return preg_match("/cli/i", php_sapi_name()) ? true : false;
     }
 }
+
+if(!function_exists('gen_uid')){
+    function gen_uid(){
+        do {
+            $uid = str_replace('.', '0', uniqid(rand(0, 999999999), true));
+        } while (strlen($uid) != 32);
+        return $uid;
+    }
+}

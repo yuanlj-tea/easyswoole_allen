@@ -12,6 +12,7 @@ use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
 use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\AbstractInterface\Controller;
+use EasySwoole\Utility\SnowFlake;
 use Swlib\Saber;
 use Swlib\SaberGM;
 
