@@ -12,15 +12,24 @@ namespace App\HttpController\Pool;
 use App\HttpController\Base\BaseMysql;
 use App\Model\User\UserBean;
 use App\Model\User\UserModel;
+use EasySwoole\EasySwoole\ServerManager;
 use EasySwoole\Http\Message\Status;
+use EasySwoole\Utility\SnowFlake;
 
 class Mysql extends BaseMysql
 {
     public function index()
     {
-        $db = $this->getDbConnection();
-        $data = $db->where('id',1,'=')->get('test');
-        $this->writeJson(1,$data);
+        $server=ServerManager::getInstance()->getSwooleServer();
+        $workerId=$server->worker_id;
+
+        $db=$this->getDbConnection();
+        $str=SnowFlake::make(rand(0,31),$workerId);
+
+        $db->insert('t',['str'=>$str]);
+        // $db = $this->getDbConnection();
+        // $data = $db->where('id',1,'=')->get('test');
+        // $this->writeJson(1,$data);
     }
 
     public function getAll()
