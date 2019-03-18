@@ -10,6 +10,7 @@ namespace App\HttpController;
 
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
+use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
 use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\AbstractInterface\Controller;
 use EasySwoole\Utility\SnowFlake;
@@ -22,6 +23,10 @@ class Index extends Controller
     {
         $request = $this->request();
         $response = $this->response();
+
+        TaskManager::async(function (){
+            pp("异步任务");
+        });
 
         $this->writeJson(200, 'hello world');
     }
