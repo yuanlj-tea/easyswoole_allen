@@ -108,4 +108,51 @@ class Mysql extends BaseMysql
             $this->writeJson(0,null,'添加失败');
         }
     }
+
+    public function testInsert()
+    {
+        ignore_user_abort();
+        $s = microtime(true);
+
+        $filePath = EASYSWOOLE_ROOT.'/500W.csv';
+        $fp = fopen($filePath,'r');
+
+        $count=0;
+        $arr=$tmp=[];
+        while (!feof($fp)){
+            $str = trim(fgets($fp));
+            if(!empty($str)){
+                $tmp = explode(',',$str);
+                array_push($arr,$tmp);
+                $count++;
+
+                if($count==8000){
+                    $this->insertBatch('t1',['tel','tel1'],$arr,4000);
+                    $count=0;
+                    $arr=$tmp=[];
+                }
+            }
+        }
+        $this->insertBatch('t1',['tel','tel1'],$arr,4000);
+
+        fclose($fp);
+        $e = microtime(true);
+        pp("耗时".($e-$s)."秒");
+    }
+
+    /**
+     * 批量插入数据
+     * @param $table 表名
+     * @param $column 字段名 eg:['id','name']
+     * @param $data 要插入的数据 eg:[[1,'zs'],[2,'ls']]
+     * @param int $splitNum 分段数，默认100
+     */
+    public function insertBatch($table,$column,$data,$splitNum=100)
+    {
+        $db=$this->getDbConnection();
+        foreach (array_chunk($data,$splitNum) as $values){
+            $sqlBatch = insert_batch($table,$column,$values);
+            $db->rawQuery($sqlBatch);
+        }
+    }
 }

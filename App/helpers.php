@@ -65,3 +65,17 @@ if(!function_exists('gen_uid')){
         return $uid;
     }
 }
+
+/**
+ * PHP大数组下，避免Mysql逐条执行，可以分批执行，提高代码效率
+ */
+if (!function_exists('insert_batch')) {
+    function insert_batch($table, $keys, $values, $type = 'INSERT')
+    {
+        $tempArray = array();
+        foreach ($values as $value) {
+            $tempArray[] = implode('\', \'', $value);
+        }
+        return $type . ' INTO `' . $table . '` (`' . implode('`, `', $keys) . '`) VALUES (\'' . implode('\'), (\'', $tempArray) . '\')';
+    }
+}
