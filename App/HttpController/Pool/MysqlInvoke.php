@@ -22,8 +22,12 @@ class MysqlInvoke extends Controller
     {
         try{
             MysqlPool::invoke(function (MysqlObject $mysqlObj){
-                $model = new UserModel($mysqlObj);
-                $model->insert(new UserBean($this->request()->getRequestParam()));
+                // $model = new UserModel($mysqlObj);
+                // $model->insert(new UserBean($this->request()->getRequestParam()));
+                $ret = $mysqlObj->insert('user',['name'=>'foo']);
+                pp($ret,.1);
+                // $res = $mysqlObj->getOne('test','*');
+                // pp($res);
             });
         }catch (\Throwable $throwable){
             $this->writeJson(Status::CODE_BAD_REQUEST, null, $throwable->getMessage());
