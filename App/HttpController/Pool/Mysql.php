@@ -12,6 +12,8 @@ namespace App\HttpController\Pool;
 use App\HttpController\Base\BaseMysql;
 use App\Model\User\UserBean;
 use App\Model\User\UserModel;
+use App\Utility\Pool\MysqlPool;
+use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\ServerManager;
 use EasySwoole\Http\Message\Status;
 use EasySwoole\Utility\SnowFlake;
@@ -20,7 +22,9 @@ class Mysql extends BaseMysql
 {
     public function index()
     {
-        $server=ServerManager::getInstance()->getSwooleServer();
+        $status = PoolManager::getInstance()->getPool(MysqlPool::class)->status();
+        pp($status);
+        /*$server=ServerManager::getInstance()->getSwooleServer();
         $workerId=$server->worker_id;
 
         $db=$this->getDbConnection();
@@ -32,7 +36,7 @@ class Mysql extends BaseMysql
 
         $db = $this->getDbConnection();
         $str = $this->getUid();
-        $db->insert('t',['str'=>$str]);
+        $db->insert('t',['str'=>$str]);*/
 
         // $str = gen_uid();
         // $db->insert('t',['str'=>$str]);
@@ -91,6 +95,8 @@ class Mysql extends BaseMysql
         }else{
             $this->writeJson(0, null, 'id不能为空');
         }
+        $status = PoolManager::getInstance()->getPool(MysqlPool::class)->status();
+        pp($status);
     }
 
     public function insert()
