@@ -10,10 +10,13 @@ namespace App\HttpController;
 
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
+use App\Utility\Pool\RedisObject;
+use App\Utility\Pool\RedisPool;
 use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
 use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\AbstractInterface\Controller;
 use EasySwoole\Utility\SnowFlake;
+use EasySwoole\Utility\Str;
 use Swlib\Saber;
 use Swlib\SaberGM;
 
@@ -21,14 +24,36 @@ class Index extends Controller
 {
     public function index()
     {
-        $request = $this->request();
+        RedisPool::invoke(function (RedisObject $redis){
+            $key = 'user:1:api_count';
+            $limit = 1;
+
+            $check = $redis->exists($key);
+            if($check){
+                $redis->incr($key);
+                $count = $redis->get($key);
+                if($count>$limit){
+                    pp('访问太过频繁');
+                    return;
+                }
+            }else{
+                $redis->incr($key);
+                $redis->expire($key,2);
+            }
+
+            $count = $redis->get($key);
+            pp("访问成功,count：{$count}");
+        });
+
+
+        /*$request = $this->request();
         $response = $this->response();
 
         TaskManager::async(function (){
             pp("异步任务");
         });
 
-        $this->writeJson(200, 'hello world');
+        $this->writeJson(200, 'hello world');*/
     }
 
     /**
