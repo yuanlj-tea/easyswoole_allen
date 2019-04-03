@@ -8,9 +8,10 @@
 
 namespace App\Dispatch;
 
+use App\Utility\Pool\MysqlObject;
+use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
-use PhpParser\Node\Stmt\Static_;
 
 abstract class Dispatcher
 {
@@ -31,7 +32,7 @@ abstract class Dispatcher
      * redis or database
      * @var string
      */
-    protected static $queueDriver = 'database';
+    protected static $queueDriver = 'redis';
 
     /**
      * 队列名,默认:default_queue_name
@@ -40,12 +41,31 @@ abstract class Dispatcher
     protected static $queueName = 'default_queue_name';
 
     /**
+     * 允许设置的队列驱动
+     * @var array
+     */
+    private $allowDriver = ['redis','database'];
+
+    /**
      * 获取重试次数
      * @return int
      */
     public function getTries()
     {
         return $this->tries;
+    }
+
+    /**
+     * 设置队列驱动
+     * @param string $driver
+     * @return $this
+     */
+    public function setQueueDriver(string $driver)
+    {
+        if(!in_array($driver,$this->allowDriver))
+            throw new \Exception("无效的队列驱动");
+        static::$queueDriver = $driver;
+        return $this;
     }
 
     /**
@@ -118,7 +138,7 @@ abstract class Dispatcher
             //存入队列的数据
             $queueData['class_name'] = Static::class;
             $queueData['param'] = [];  //构造函数的参数
-            $queueData['add_time'] = date('Y-m-d H:i:s');
+            $queueData['add_time'] = time();
             $queueData['delay'] = $delay;
 
             $ref = new \ReflectionClass(Static::class);
@@ -143,7 +163,13 @@ abstract class Dispatcher
                     });
                     break;
                 case 'database':
-
+                    MysqlPool::invoke(function(MysqlObject $db)use($queueName,$queueJson){
+                        $db->insert('jobs',[
+                            'queue' => $queueName,
+                            'content' => $queueJson,
+                            'add_time' => date('Y-m-d H:i:s')
+                        ]);
+                    });
                     break;
                 default:
                     throw new \Exception('不支持的队列驱动：' . $driver);
