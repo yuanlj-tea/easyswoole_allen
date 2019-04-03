@@ -231,15 +231,15 @@ class Job
     {
         go(function () {
             $mysqlConf = $this->config['MYSQL'];
-            $mysqlLiConfig = new Config($mysqlConf);
-            $mysqlLi = new Mysqli($mysqlLiConfig);
+            $config = new Config($mysqlConf);
+            $db = new Mysqli($config);
 
             // $mysqlLi->connect();
 
             while (true) {
-                $res = $mysqlLi->where('id', 1, '=')->get('t1', null, '*');
+                $res = $db->where('id', 1, '=')->get('t1', null, '*');
                 print_r($res);
-                echo $mysqlLi->getLastQuery() . "\n";
+                echo $db->getLastQuery() . "\n";
                 sleep(5);
             }
         });
