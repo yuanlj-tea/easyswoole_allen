@@ -25,7 +25,7 @@ class Index extends Controller
 {
     public function index()
     {
-        $job = (new TestJob(1,'hello',['hehe']))->setQueueDriver('database')->setQueueName("hehe1");
+        $job = (new TestJob(1,'hello',['hehe']))->setQueueDriver('redis')->setQueueName("hehe1");
         $job->dispatch($job);
 
         RedisPool::invoke(function (RedisObject $redis){

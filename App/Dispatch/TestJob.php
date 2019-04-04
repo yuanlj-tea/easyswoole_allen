@@ -42,6 +42,8 @@ class TestJob extends Dispatcher
 
     public function run()
     {
+        echo "执行了\n";
+        sleep(20);
         // throw new \Exception("错了");
         file_put_contents("/tmp/TestJob.log", $this->id . ':' . $this->name . ':' . print_r($this->arr, true) . PHP_EOL, FILE_APPEND);
     }
