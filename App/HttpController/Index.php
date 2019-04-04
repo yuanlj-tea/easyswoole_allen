@@ -25,10 +25,13 @@ class Index extends Controller
 {
     public function index()
     {
-        $job = (new TestJob(1,'hello',['hehe']))->setQueueDriver('redis')->setQueueName("hehe1");
-        $job->dispatch($job);
 
-        RedisPool::invoke(function (RedisObject $redis){
+        $job = (new TestJob(1,'hello',['hehe']))->setQueueDriver('redis')->setQueueName("hehe");
+        // $job = (new TestJob(1,'hello',['hehe']));
+        $job->dispatch($job);
+        echo "ok\n";
+        $this->writeJson(200,'ok');
+        /*RedisPool::invoke(function (RedisObject $redis){
             $key = 'user:1:api_count';
             $limit = 1;
 
@@ -47,7 +50,7 @@ class Index extends Controller
 
             $count = $redis->get($key);
             pp("访问成功,count：{$count}");
-        });
+        });*/
 
 
         /*$request = $this->request();
