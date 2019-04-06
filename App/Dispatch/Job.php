@@ -15,8 +15,6 @@ if (file_exists($file)) {
 }
 
 use Swoole\Coroutine\Redis;
-use EasySwoole\Mysqli\Mysqli;
-use EasySwoole\Mysqli\Config as MysqlConfig;
 use App\Dispatch\DispatchProvider;
 use App\Container\Container;
 use EasySwoole\Component\Timer;
@@ -26,6 +24,7 @@ use App\Utility\Pool\RedisPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\MysqlObject;
 use EasySwoole\EasySwoole\Config;
+use Swoole\Coroutine\Channel;
 
 class Job
 {
@@ -51,18 +50,23 @@ class Job
         $this->config = require_once './config.php';
 
         global $argv;
+
+        //help提示
         if (!isset($argv[1]) || strtolower($argv[1]) == 'help') {
             $this->showHelp();
         }
-        if ($argv[1] == 'gen_database') {
-            $this->generateJobsDatabase();
-            return;
-        }
-        array_shift($argv);
 
         //注册连接池
         $this->registerPool();
 
+        //生成数据库队列驱动表
+        if ($argv[1] == 'gen_database') {
+            $this->generateJobsDatabase();
+            return;
+        }
+
+        //解析参数
+        array_shift($argv);
         $argv = $this->parsingArgv($argv);
         if (!isset($argv['class']) && !isset($argv['driver']) && !isset($argv['queue'])) {
             echo "缺少参数或参数错误\n";
@@ -109,6 +113,25 @@ HELP;
 
     }
 
+    /**
+     * 注册mysql&redis连接池
+     */
+    public function registerPool()
+    {
+        //加载配置文件
+        Config::getInstance()->loadEnv('./config.php');
+
+        //注册mysql数据库连接池
+        PoolManager::getInstance()
+            ->register(MysqlPool::class, 30)
+            ->setMinObjectNum(5);
+
+        //注册redis连接池
+        PoolManager::getInstance()
+            ->register(RedisPool::class, 30)
+            ->setMinObjectNum(5);
+    }
+
     public function runQueue($driver, $queue, $tries)
     {
         switch ($driver) {
@@ -141,7 +164,6 @@ HELP;
                 die("无效的队列驱动：" . $queueDriver);
                 break;
         }
-
 
     }
 
@@ -199,43 +221,85 @@ HELP;
                                         $realDelay = ($addTime + $delay / 1000 - time());
                                         if ($realDelay > 0) { //如果没超过delay时间,延迟执行还剩下的秒数
                                             echo "真实延时:{$realDelay}\n";
-                                            Timer::getInstance()->after($realDelay * 1000, function () use ($obj) {
-                                                $obj->run();
+
+                                            // after里默认开启了一个协程
+                                            // $chanel = new Channel(1);
+                                            Timer::getInstance()->after($realDelay * 1000, function () use ($obj, $queueName, $queueData) {
+                                                try {
+                                                    $obj->run();
+                                                } catch (\Exception $e) {
+                                                    echo "异常:{$e->getMessage()}\n";
+                                                    // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
+                                                }
                                             });
-                                            continue;
+                                            // $channelData = $chanel->pop();
+                                            // if(!empty($channelData)){
+                                            //     $this->failerPush($channelData['queue_name'], $channelData['queue_data']);
+                                            // }
+
                                         } else {
                                             echo "已经超过延时时间了,立即执行\n";
-                                            $obj->run();
+                                            //任务里有io阻塞时,不会阻塞消费
+                                            // $chanel = new Channel(1);
+                                            go(function () use ($obj, $queueName, $queueData) {
+                                                try {
+                                                    $obj->run();
+                                                } catch (\Exception $e) {
+                                                    echo "异常:{$e->getMessage()},扔进channel\n";
+                                                    // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
+                                                }
+                                            });
+                                            //todo 放弃入失败队列,消费后不做channel pop阻塞入失败队列
+                                            // $channelData = $chanel->pop(0.5);
+                                            // if (!empty($channelData)) {
+                                            //     $this->failerPush($channelData['queue_name'], $channelData['queue_data']);
+                                            // }
                                         }
+                                        continue;
                                     }
 
                                     //重试机制
                                     if ($tries > 0) {
+                                        // $chanel = new Channel(1);
                                         go(function () use ($obj, $tries, $queueName, $queueData) {
                                             $isSucc = false; //是否调用成功标识
                                             for ($i = 0; $i <= $tries; $i++) {
                                                 try {
-                                                    echo "重新执行{$i}次数\n";
+                                                    echo "重新执行:{$i}次\n";
                                                     $obj->run();
                                                     $isSucc = true;
                                                     break;
                                                 } catch (\Exception $e) {
-                                                    echo "执行{$i}次失败\n";
+                                                    echo "执行:{$i}次失败\n";
                                                 }
                                             }
+                                            //重试$tries次失败,入失败队列
                                             if (!$isSucc) {
-                                                $this->failerPush($queueName, $queueData);
+                                                // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
                                             }
                                         });
+
+                                        // $channelData = $chanel->pop(0.5);
+                                        // if(!empty($channelData)){
+                                        //     $this->failerPush($channelData['queue_name'], $channelData['queue_data']);
+                                        // }
                                     } else {
                                         //任务里有io阻塞时,不会阻塞消费
+                                        // $chanel = new Channel(1);
                                         go(function () use ($obj, $queueName, $queueData) {
                                             try {
                                                 $obj->run();
                                             } catch (\Exception $e) {
-                                                $this->failerPush($queueName, $queueData);
+                                                echo "异常:{$e->getMessage()},扔进channel\n";
+                                                // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
                                             }
                                         });
+                                        //todo 放弃入失败队列,消费后不做channel pop阻塞入失败队列
+                                        // $channelData = $chanel->pop(0.5);
+                                        // if (!empty($channelData)) {
+                                        //     $this->failerPush($channelData['queue_name'], $channelData['queue_data']);
+                                        // }
+
                                     }
                                 }
                             }
@@ -256,101 +320,111 @@ HELP;
      */
     public function consumeDatabase($queueName, $tries = 0)
     {
-        go(function () use ($queueName) {
-            $mysqlConf = $this->config['MYSQL'];
-            $config = new MysqlConfig($mysqlConf);
-            $db = new Mysqli($config);
+        go(function () use ($queueName, $tries) {
+            MysqlPool::invoke(function (MysqlObject $db) use ($queueName, $tries) {
 
-            // $mysqlLi->connect();
+                $queueArr = explode(',', $queueName);
+                while (true) {
+                    $db->startTransaction();
+                    $res = $db->selectForUpdate(true)->whereIn('queue', $queueArr)->orderBy('id', 'asc')->getOne('jobs', '*');
 
-            $queueArr = explode(',', $queueName);
-            while (true) {
-                // try {
-                $db->startTransaction();
-                $res = $db->selectForUpdate(true)->whereIn('queue', $queueArr)->orderBy('id', 'asc')->getOne('jobs', '*');
+                    if (!empty($res)) {
 
-                if (!empty($res)) {
-                    $queueData = json_decode($res['content'], 1);
-                    $className = $queueData['class_name'];
+                        $queueData = json_decode($res['content'], 1);
+                        if (is_array($queueData)) {
+                            $className = $queueData['class_name'];
 
-                    $param = $queueData['param'];
-                    $delay = $queueData['delay'];
-                    $addTime = $queueData['add_time'];
+                            $param = $queueData['param'];
+                            $delay = $queueData['delay'];
+                            $addTime = $queueData['add_time'];
 
-                    $container = Container::getInstance();
-                    $obj = $container->get($className, $param);
-                    $tries = isset($tries) ? $tries : $obj->getTries();
+                            $container = Container::getInstance();
+                            $obj = $container->get($className, $param);
+                            $tries = isset($tries) ? $tries : $obj->getTries();
 
-                    //延时执行
-                    if ($delay > 0) {
-                        $realDelay = ($addTime + $delay / 1000 - time());
-                        if ($realDelay > 0) { //如果没超过delay时间,延迟执行还剩下的秒数
-                            echo "真实延时:{$realDelay}\n";
-                            Timer::getInstance()->after($realDelay * 1000, function () use ($obj) {
-                                $obj->run();
+                            //延时执行
+                            if ($delay > 0) {
+                                $realDelay = ($addTime + $delay / 1000 - time());
+                                echo "real_delay:" . $realDelay . "\n";
+                                if ($realDelay > 0) { //如果没超过delay时间,延迟执行还剩下的秒数
+                                    echo "真实延时:{$realDelay}后执行\n";
+                                    Timer::getInstance()->after($realDelay * 1000, function () use ($obj, $queueName, $queueData, $db, $res) {
+                                        try {
+                                            $obj->run();
+                                        } catch (\Exception $e) {
+                                            $this->failedPushDb($queueName, $queueData, 1);
+                                        }
+                                    });
+                                } else {
+                                    echo "已经超过延时时间了,立即执行\n";
+                                    go(function () use ($obj, $queueName, $queueData, $tries) {
+                                        try {
+                                            $obj->run();
+                                        } catch (\Exception $e) {
+                                            $this->failedPushDb($queueName, $queueData, 1);
+                                        }
+                                    });
+                                }
+                                $db->where('id', $res['id'], '=')->delete('jobs');
+                                $db->commit();
+                                continue;
+                            }
 
-                            });
-                            continue;
-                        } else {
-                            echo "已经超过延时时间了,立即执行\n";
-                            $obj->run();
-                        }
-                    }
+                            //重试机制
+                            if ($tries > 0) {
+                                go(function () use ($obj, $tries, $queueName, $queueData) {
 
-                    //重试机制
-                    if ($tries > 0) {
-                        $isSucc = false; //是否调用成功标识
-                        for ($i = 0; $i <= $tries; $i++) {
-                            try {
-                                go(function () use ($obj) {
-                                    $obj->run();
+                                    $isSucc = false; //是否调用成功标识
+                                    for ($i = 0; $i <= $tries; $i++) {
+                                        try {
+                                            echo "重新执行:{$i}次\n";
+                                            $obj->run();
+                                            $isSucc = true;
+                                            break;
+                                        } catch (\Exception $e) {
+                                            echo "执行:{$i}次失败\n";
+                                        }
+                                    }
+                                    if (!$isSucc) {
+                                        $this->failedPushDb($queueName, $queueData, $tries);
+                                    }
                                 });
-                                $isSucc = true;
-                                break;
-                            } catch (\Exception $e) {
-                                $isSucc = false;
+                            } else {
+                                //io阻塞时,不会阻塞消费
+                                go(function () use ($obj, $queueName, $queueData, $tries) {
+                                    try {
+                                        $obj->run();
+                                    } catch (\Exception $e) {
+                                        $this->failedPushDb($queueName, $queueData, 1);
+                                    }
+                                });
                             }
                         }
-
-                        if (!$isSucc) {
-                            $this->failedPushDb($db, $queueName, $queueData, $tries);
-                        }
                     } else {
-                        try {
-                            //io阻塞时,不会阻塞消费
-                            go(function () use ($obj) {
-                                echo "有没有阻塞\n";
-                                $obj->run();
-                            });
-                        } catch (\Exception $e) {
-                            $this->failedPushDb($db, $queueName, $queueData, 1);
-                        }
+                        sleep(1);
                     }
-                } else {
-                    sleep(1);
+
+                    $db->where('id', $res['id'], '=')->delete('jobs');
+                    $db->commit();
                 }
+            });
 
-                $db->where('id', $res['id'], '=')->delete('jobs');
-                $db->commit();
-                // } catch (\Exception $e) {
-                //     // $db->rollback();
-                // }
-
-            }
         });
     }
 
     /**
      * 执行失败的数据,入failed_jobs表
      */
-    public function failedPushDb($db, string $queueName, array $queueData, int $triesTimes = 0)
+    public function failedPushDb(string $queueName, array $queueData, int $triesTimes = 0)
     {
-        $db->insert('failed_jobs', [
-            'queue' => $queueName,
-            'content' => json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'add_time' => date('Y-m-d H:i:s'),
-            'try_times' => $triesTimes
-        ]);
+        MysqlPool::invoke(function (MysqlObject $db) use ($queueName, $queueData, $triesTimes) {
+            $db->insert('failed_jobs', [
+                'queue' => $queueName,
+                'content' => json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'add_time' => date('Y-m-d H:i:s'),
+                'try_times' => $triesTimes
+            ]);
+        });
     }
 
 
@@ -364,6 +438,15 @@ HELP;
         RedisPool::invoke(function (RedisObject $redis) use ($queueName, $queueData) {
             $redis->lPush($queueName . "_failed_job", json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         });
+
+        // $redis = new Redis();
+        // $redisConf = $this->config['REDIS'];
+        // if($redis->connect($redisConf['host'],$redisConf['port'])){
+        //     if(!empty($redisConf['auth'])){
+        //         $redis->auth($redisConf['auth']);
+        //         $redis->lPush($queueName . "_failed_job", json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        //     }
+        // }
     }
 
     /**
@@ -417,40 +500,31 @@ CREATE TABLE `failed_jobs` (
   KEY `queue` (`queue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
 
+        $exitStatus = 0;
         go(function () use ($sql, $failedSQL, $dropJobsSql, $dropFailedJobsSql) {
-            $mysqlConf = $this->config['MYSQL'];
-            $mysqlLiConfig = new Config($mysqlConf);
-            $mysqlLi = new Mysqli($mysqlLiConfig);
-
-            if ($mysqlLi->rawQuery($dropJobsSql)) {
-                echo "删除jobs表成功\n";
+            try {
+                MysqlPool::invoke(function (MysqlObject $db) use ($sql, $failedSQL, $dropJobsSql, $dropFailedJobsSql) {
+                    if ($db->rawQuery($dropJobsSql)) {
+                        echo "删除jobs表成功\n";
+                    }
+                    if ($db->rawQuery($dropFailedJobsSql)) {
+                        echo "删除failed_jobs表成功\n";
+                    }
+                    if ($db->rawQuery($sql)) {
+                        echo "生成jobs表成功\n";
+                    }
+                    if ($db->rawQuery($failedSQL)) {
+                        echo "生成failed_jobs表成功\n";
+                    }
+                });
+                exit("ok\n");
+            } catch (\Swoole\ExitException $e) {
+                global $exitStatus;
+                $exitStatus = $e->getStatus();
             }
-            if ($mysqlLi->rawQuery($dropFailedJobsSql)) {
-                echo "删除failed_jobs表成功\n";
-            }
-            if ($mysqlLi->rawQuery($sql)) {
-                echo "生成jobs表成功\n";
-            }
-            if ($mysqlLi->rawQuery($failedSQL)) {
-                echo "生成failed_jobs表成功\n";
-            }
-
         });
-
-    }
-
-    public function registerPool()
-    {
-        Config::getInstance()->loadEnv('./config.php');
-        //注册mysql数据库连接池
-        PoolManager::getInstance()
-            ->register(MysqlPool::class, 30)
-            ->setMinObjectNum(5);
-
-        //注册redis连接池
-        PoolManager::getInstance()
-            ->register(RedisPool::class, 30)
-            ->setMinObjectNum(5);
+        swoole_event_wait();
+        exit($exitStatus);
     }
 }
 

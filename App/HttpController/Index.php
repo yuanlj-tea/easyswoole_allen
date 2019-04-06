@@ -26,11 +26,13 @@ class Index extends Controller
     public function index()
     {
 
-        $job = (new TestJob(1,'hello',['hehe']))->setQueueDriver('redis')->setQueueName("hehe");
+        $job = (new TestJob(1,'hello',['hehe']))->setDelay(5*1000)->setQueueDriver('database')->setQueueName("hehe");
         // $job = (new TestJob(1,'hello',['hehe']));
         $job->dispatch($job);
         echo "ok\n";
         $this->writeJson(200,'ok');
+
+
         /*RedisPool::invoke(function (RedisObject $redis){
             $key = 'user:1:api_count';
             $limit = 1;
