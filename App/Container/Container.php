@@ -84,7 +84,7 @@ class Container
         } elseif (is_object($defination)) {//如果是个对象 直接返回
             return $defination;
         } else {
-            throw new Exception($class . ' 声明错误!');
+            throw new \Exception($class . ' 声明错误!');
         }
         return $obj;
     }
@@ -134,7 +134,7 @@ class Container
             }
             return $defination;
         }
-        throw new Exception($class . ' 声明错误');
+        throw new \Exception($class . ' 声明错误');
     }
 
     /**
@@ -214,7 +214,7 @@ class Container
                     $parameters = $reflection->getConstructor()->getParameters();
                     $name = $parameters[$index]->getName();
                     $class = $reflection->getName();
-                    throw new Exception('实例化类 ' . $class . ' 时缺少必要参数:' . $name);
+                    throw new \Exception('实例化类 ' . $class . ' 时缺少必要参数:' . $name);
                 }
             }
         }
