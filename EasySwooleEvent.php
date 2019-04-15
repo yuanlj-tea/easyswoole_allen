@@ -62,8 +62,12 @@ class EasySwooleEvent implements Event
         $isDev = Core::getInstance()->isDev();
 
         if ($isDev) {
+
             //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
-            $swooleServer->addProcess((new HotReload('HotReload', ['disableInotify' => false]))->getProcess());
+            $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
+            $GLOBALS['hot_reload_process'] = $process;
+            $swooleServer->addProcess($process);
+            // $process->write("向子进程写入数据");
         }
 
         /**

@@ -17,6 +17,10 @@ use EasySwoole\Utility\SnowFlake;
 
 class ValidateCsrfToken extends MiddlewareAbstract
 {
+    /**
+     * 全局要排除的方法
+     * @var array
+     */
     protected $except = [
         Index::class . '\getCsrfToken',
     ];
