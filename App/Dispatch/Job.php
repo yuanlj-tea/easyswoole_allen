@@ -289,13 +289,14 @@ HELP;
                                         go(function () use ($obj, $queueName, $queueData) {
                                             try {
                                                 $obj->run();
+                                                // $chanel->push(null);
                                             } catch (\Exception $e) {
                                                 echo "异常:{$e->getMessage()},扔进channel\n";
                                                 // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
                                             }
                                         });
                                         //todo 放弃入失败队列,消费后不做channel pop阻塞入失败队列
-                                        // $channelData = $chanel->pop(0.5);
+                                        // $channelData = $chanel->pop();
                                         // if (!empty($channelData)) {
                                         //     $this->failerPush($channelData['queue_name'], $channelData['queue_data']);
                                         // }

@@ -28,6 +28,7 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             'Psr\\Http\\Message\\' => 17,
             'PhpParser\\' => 10,
+            'PhpAmqpLib\\' => 11,
         ),
         'F' => 
         array (
@@ -93,6 +94,10 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'PhpAmqpLib\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/php-amqplib/php-amqplib/PhpAmqpLib',
         ),
         'FastRoute\\' => 
         array (

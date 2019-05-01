@@ -5,7 +5,8 @@
         "easyswoole/curl": "^1.0",
         "easyswoole/mysqli": "^1.1",
         "swlib/saber": "^1.0",
-        "easyswoole/rpc": "^2.0"
+        "easyswoole/rpc": "^2.0",
+        "php-amqplib/php-amqplib": "^2.9"
     },
     "autoload": {
         "psr-4": {
