@@ -184,7 +184,7 @@ class Index extends Controller
         // $connection = Container::getInstance()->get(AMQPStreamConnection::class, $amqpConf);
         //
         // $channel = $connection->channel();
-        // $channel->queue_declare('demo', false, false, false, false);
+        // $channel->queue_declare($exchangeName, false, false, false, false);
         //
         // $msg = Container::getInstance()->get(AMQPMessage::class, $sendMsg);
         // $channel->basic_publish($msg, '', $routeKey);
