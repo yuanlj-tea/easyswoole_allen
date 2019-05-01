@@ -44,7 +44,7 @@ abstract class Dispatcher
      * 允许设置的队列驱动
      * @var array
      */
-    private $allowDriver = ['redis','database'];
+    private $allowDriver = ['redis', 'database'];
 
     /**
      * 获取重试次数
@@ -62,7 +62,7 @@ abstract class Dispatcher
      */
     public function setQueueDriver(string $driver)
     {
-        if(!in_array($driver,$this->allowDriver))
+        if (!in_array($driver, $this->allowDriver))
             throw new \Exception("无效的队列驱动");
         static::$queueDriver = $driver;
         return $this;
@@ -163,8 +163,8 @@ abstract class Dispatcher
                     });
                     break;
                 case 'database':
-                    MysqlPool::invoke(function(MysqlObject $db)use($queueName,$queueJson){
-                        $db->insert('jobs',[
+                    MysqlPool::invoke(function (MysqlObject $db) use ($queueName, $queueJson) {
+                        $db->insert('jobs', [
                             'queue' => $queueName,
                             'content' => $queueJson,
                             'add_time' => date('Y-m-d H:i:s')

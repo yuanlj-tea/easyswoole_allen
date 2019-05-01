@@ -26,7 +26,7 @@ class TestJob extends Dispatcher
      */
     protected static $queueDriver = 'redis';
 
-    protected static $queueName = 'default_queue_name1';
+    protected static $queueName = 'default_queue_name';
 
     protected $delay = 0;
 

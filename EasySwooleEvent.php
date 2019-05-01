@@ -9,9 +9,11 @@
 namespace EasySwoole\EasySwoole;
 
 
+use App\Container\Container;
 use App\Process\HotReload;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisPool;
+use EasySwoole\Component\Di;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
@@ -20,6 +22,8 @@ use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
 use EasySwoole\Utility\File;
 use EasySwoole\FastCache\CacheProcess;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 
 class EasySwooleEvent implements Event
 {

@@ -8,12 +8,17 @@
 
 namespace App\HttpController;
 
+use App\Container\Container;
 use App\Dispatch\TestJob;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
 use App\Process\HotReload;
+use App\Utility\Pool\AmqpObject;
+use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
+use EasySwoole\Component\Di;
+use EasySwoole\EasySwoole\Config;
 use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
 use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\AbstractInterface\Controller;
@@ -21,17 +26,19 @@ use EasySwoole\Utility\SnowFlake;
 use EasySwoole\Utility\Str;
 use Swlib\Saber;
 use Swlib\SaberGM;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 
 class Index extends Controller
 {
     public function index()
     {
 
-        $job = (new TestJob(1,'hello',['hehe']))->setDelay(0*1000)->setQueueDriver('redis')->setQueueName("hehe");
+        $job = (new TestJob(1, 'hello', ['hehe']))->setDelay(0 * 1000)->setQueueDriver('redis')->setQueueName("hehe");
         // $job = (new TestJob(1,'hello',['hehe']));
         $job->dispatch($job);
         echo "ok\n";
-        $this->writeJson(200,'ok');
+        $this->writeJson(200, 'ok');
 
 
         /*RedisPool::invoke(function (RedisObject $redis){
@@ -131,7 +138,7 @@ class Index extends Controller
     {
         //局部要排除中间件的方法
         $this->middlewareExcept = [
-            Index::class.'\getCsrfToken',
+            Index::class . '\getCsrfToken',
         ];
         //要继承的中间件
         $this->middleware = [
@@ -152,5 +159,39 @@ class Index extends Controller
         $GLOBALS['hot_reload_process']->write($str);
         $pid = $GLOBALS['hot_reload_process']->pid;
         echo "子进程pid：{$pid}\n";
+    }
+
+    public function testAmqp()
+    {
+        $request = $this->request();
+        $sendMsg = $request->getQueryParam('msg', 'hello world');
+
+        $exchangeName = 'demo';
+        $routeKey = 'hello';
+        AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $routeKey, $sendMsg) {
+            $channel = $amqp->channel();
+            $channel->queue_declare($exchangeName, false, false, false, false);
+
+            $msg = new AMQPMessage($sendMsg);
+            $channel->basic_publish($msg, '', $routeKey);
+            pp("send {$sendMsg} ok");
+            file_put_contents('/tmp/test.log', $sendMsg . PHP_EOL, FILE_APPEND);
+            $channel->close();
+        });
+
+        // $amqpConf = Config::getInstance()->getConf('AMQP');
+        // $amqpConf = array_values($amqpConf);
+        // $connection = Container::getInstance()->get(AMQPStreamConnection::class, $amqpConf);
+        //
+        // $channel = $connection->channel();
+        // $channel->queue_declare('demo', false, false, false, false);
+        //
+        // $msg = Container::getInstance()->get(AMQPMessage::class, $sendMsg);
+        // $channel->basic_publish($msg, '', $routeKey);
+        // echo "Sent {$sendMsg}\n";
+        //
+        // $channel->close();
+        // $connection->close();
+
     }
 }
