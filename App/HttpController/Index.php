@@ -11,6 +11,7 @@ namespace App\HttpController;
 use App\Dispatch\TestJob;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
+use App\Process\HotReload;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
 use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
@@ -75,9 +76,6 @@ class Index extends Controller
 
     public function testSaber()
     {
-
-
-
         [$html] = SaberGM::list([
             'uri' => [
                 'http://www.blog.com/sso/server/login'
@@ -131,7 +129,7 @@ class Index extends Controller
 
     public function onRequest(? string $action): ?bool
     {
-        //全局要排除中间件的方法
+        //局部要排除中间件的方法
         $this->middlewareExcept = [
             Index::class.'\getCsrfToken',
         ];
@@ -141,5 +139,18 @@ class Index extends Controller
             ValidateCsrfToken::class,
         ];
         return parent::onRequest($action);
+    }
+
+    /**
+     * 测试向自定义子进程发送数据
+     */
+    public function testSendMsgToProcess()
+    {
+        $request = $this->request();
+        $str = $request->getQueryParam('str');
+        print_r($GLOBALS['hot_reload_process']);
+        $GLOBALS['hot_reload_process']->write($str);
+        $pid = $GLOBALS['hot_reload_process']->pid;
+        echo "子进程pid：{$pid}\n";
     }
 }

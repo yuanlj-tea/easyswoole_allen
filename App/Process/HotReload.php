@@ -154,11 +154,13 @@ class HotReload extends AbstractProcess
 
     public function onShutDown()
     {
-        // TODO: Implement onShutDown() method.
+        $class = __CLASS__;
+        echo "子进程{$class} shutdown\n";
     }
 
     public function onReceive(string $str)
     {
-        // TODO: Implement onReceive() method.
+        $class = __CLASS__;
+        echo "子进程{$class}接收到消息：{$str}\n";
     }
 }
