@@ -42,7 +42,7 @@ return [
         ]
     ],
     'FAST_CACHE' => [
-        'PROCESS_NUM' => 5,
+        'PROCESS_NUM' => 0,
         'BACKLOG' => 256,
     ],
     'DISPLAY_ERROR' => true,
@@ -65,6 +65,16 @@ return [
         'host'          => '127.0.0.1',
         'port'          => '6379',
         'auth'          => '123456',
+        'POOL_MAX_NUM'  => '20',
+        'POOL_MIN_NUM'  => '5',
+        'POOL_TIME_OUT' => '0.5',
+    ],
+    'AMQP' => [
+        'host' => '192.168.1.207',
+        'port' => 5672,
+        'user' => 'guest',
+        'pwd' => 'guest',
+        'vhost' => '/',
         'POOL_MAX_NUM'  => '20',
         'POOL_MIN_NUM'  => '5',
         'POOL_TIME_OUT' => '0.5',
