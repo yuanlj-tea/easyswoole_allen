@@ -11,6 +11,7 @@ namespace EasySwoole\EasySwoole;
 
 use App\Container\Container;
 use App\Process\HotReload;
+use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisPool;
 use EasySwoole\Component\Di;
@@ -46,6 +47,11 @@ class EasySwooleEvent implements Event
             ->register(RedisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
 
+        //注册rabbitmq连接池
+        PoolManager::getInstance()
+            ->register(AmqpPool::class,$conf->getConf('AMQP.POOL_MAX_NUM'))
+            ->setMinObjectNum((int)$conf->getConf('AMQP.POOL_MIN_NUM'));
+
 
     }
 
@@ -74,9 +80,7 @@ class EasySwooleEvent implements Event
             // $process->write("向子进程写入数据");
         }
 
-        /**
-         * fastCache 数据落地方案
-         */
+        //fastCache 数据落地方案
         /*Cache::getInstance()->setTickInterval(5 * 1000);
         Cache::getInstance()->setOnTick(function (CacheProcess $cacheProcess) {
             $data = [

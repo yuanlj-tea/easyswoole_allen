@@ -8,6 +8,7 @@
 
 namespace App\Utility\Pool;
 
+use App\Libs\Amqp;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use EasySwoole\Component\Pool\PoolObjectInterface;

@@ -8,10 +8,16 @@
 
 namespace App\Dispatch;
 
+use App\Libs\Publisher;
+use App\Utility\Pool\AmqpObject;
+use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlObject;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
+use EasySwoole\EasySwoole\Config;
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
 
 abstract class Dispatcher
 {
@@ -41,10 +47,50 @@ abstract class Dispatcher
     protected static $queueName = 'default_queue_name';
 
     /**
+     * amqp驱动名
+     * @var string
+     */
+    private $amqp = 'amqp';
+
+    /**
+     * 交换机名称,queue driver为amqp时有效
+     * @var
+     */
+    protected static $amqpExchange;
+
+    /**
+     * 队列名,queue driver为amqp时有效
+     * @var
+     */
+    protected static $amqpQueue;
+
+    /**
+     * 路由键名,queue driver为amqp时有效
+     * @var
+     */
+    protected static $amqpRoutekey;
+
+    /**
+     * amqp类型
+     * @var
+     */
+    protected static $amqpType;
+
+    /**
+     * 允许的amqp类型
+     * @var
+     */
+    private static $allowAmqpType = [
+        AMQP_EX_TYPE_DIRECT,
+        AMQP_EX_TYPE_FANOUT,
+        AMQP_EX_TYPE_TOPIC,
+    ];
+
+    /**
      * 允许设置的队列驱动
      * @var array
      */
-    private $allowDriver = ['redis', 'database'];
+    private $allowDriver = ['redis', 'database', 'amqp'];
 
     /**
      * 获取重试次数
@@ -84,6 +130,9 @@ abstract class Dispatcher
      */
     public function setQueueName(string $queueName)
     {
+        if(static::$queueDriver == $this->amqp){
+            throw new \Exception("amqp不允许设置此参数");
+        }
         static::$queueName = $queueName;
         return $this;
     }
@@ -118,6 +167,54 @@ abstract class Dispatcher
     }
 
     /**
+     * 设置amqp的类型,direct/fanout/topic
+     * @param string $amqpType
+     * @return $this
+     * @throws \Exception
+     */
+    public function setAmqpType(string $amqpType = AMQP_EX_TYPE_DIRECT)
+    {
+        if (static::$queueDriver != 'amqp') {
+            throw new \Exception("只有amqp类型,才能设置此参数");
+        }
+        if (!in_array($amqpType, self::$allowAmqpType)) {
+            throw new \Exception("无效的类型");
+        }
+        static::$amqpType = $amqpType;
+        return $this;
+    }
+
+    /**
+     * 设置交换机
+     * @param string $exchangeName
+     */
+    public function setAmqpExchange(string $exchangeName)
+    {
+        static::$amqpExchange = $exchangeName;
+        return $this;
+    }
+
+    /**
+     * 设置amqp队列
+     * @param string $queueName
+     */
+    public function setAmqpQueue(string $queueName = '')
+    {
+        static::$amqpQueue = $queueName;
+        return $this;
+    }
+
+    /**
+     * 设置amqp路由键
+     * @param string $routeKey
+     */
+    public function setAmqpRouteKey(string $routeKey)
+    {
+        static::$amqpRoutekey = $routeKey;
+        return $this;
+    }
+
+    /**
      * run
      * @return mixed
      */
@@ -132,7 +229,15 @@ abstract class Dispatcher
     {
         try {
             $driver = $dispatcher::getQueueDriver();
-            $queueName = $dispatcher::getQueueName();
+
+            if ($driver == $this->amqp) {
+                $amqpExchange = static::$amqpExchange;
+                $amqpQueue = static::$amqpQueue;
+                $amqpRouteKey = static::$amqpRoutekey;
+                $amqpType = static::$amqpType;
+            } else {
+                $queueName = $dispatcher::getQueueName();
+            }
             $delay = $dispatcher->getDelay();
 
             //存入队列的数据
@@ -170,6 +275,24 @@ abstract class Dispatcher
                             'add_time' => date('Y-m-d H:i:s')
                         ]);
                     });
+                    break;
+                case $this->amqp:
+                    //连接池
+                    /*AmqpPool::invoke(function (AmqpObject $amqp) use ($amqpType, $amqpExchange, $amqpQueue, $amqpRouteKey, $queueJson) {
+                        $channel = $amqp->channel();
+
+                        $channel->exchange_declare($amqpExchange, $amqpType, false, true, false);
+                        $channel->queue_declare($amqpQueue, false, true, false, false);
+
+                        $msg = new AMQPMessage($queueJson);
+                        $channel->basic_publish($msg, $amqpExchange, $amqpRouteKey);
+                    });*/
+
+
+                    $amqpConf = Config::getInstance()->getConf('AMQP');
+                    $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
+                    $publisher->sendMessage($queueJson);
+                    $publisher->closeConnetct();
                     break;
                 default:
                     throw new \Exception('不支持的队列驱动：' . $driver);

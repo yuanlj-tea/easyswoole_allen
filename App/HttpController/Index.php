@@ -10,6 +10,7 @@ namespace App\HttpController;
 
 use App\Container\Container;
 use App\Dispatch\TestJob;
+use App\Libs\Publisher;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
 use App\Process\HotReload;
@@ -166,32 +167,83 @@ class Index extends Controller
         $request = $this->request();
         $sendMsg = $request->getQueryParam('msg', 'hello world');
 
-        $exchangeName = 'demo';
-        $routeKey = 'hello';
-        AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $routeKey, $sendMsg) {
+        $exchangeName = 'logs';
+        $queueName = '';  //queuename为空，type为fanout时，为发布订阅
+        $routeKey = 'php.laravel';
+
+        //libs
+        // $amqpConf = Config::getInstance()->getConf('AMQP');
+        // $publisher = new Publisher($exchangeName, $queueName, $routeKey, AMQP_EX_TYPE_DIRECT, $amqpConf);
+        // $publisher->sendMessage($sendMsg);
+        // $publisher->closeConnetct();
+
+
+        //连接池形式
+        // fanout:该值会被忽略，因为该类型的交换机会把所有它知道的队列发消息，无差别区别
+        // direct:只有精确匹配该路由键的队列，才会发送消息到该队列
+        // topic:只有正则匹配到的路由键的队列，才会发送到该队列
+        AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $queueName, $routeKey, $sendMsg) {
             $channel = $amqp->channel();
-            $channel->queue_declare($exchangeName, false, false, false, false);
+
+            $channel->exchange_declare($exchangeName, AMQP_EX_TYPE_FANOUT, false, true, false);
+            $channel->queue_declare($queueName, false, true, false, false);
 
             $msg = new AMQPMessage($sendMsg);
-            $channel->basic_publish($msg, '', $routeKey);
+            $channel->basic_publish($msg, $exchangeName, $routeKey);
             pp("send {$sendMsg} ok");
             file_put_contents('/tmp/test.log', $sendMsg . PHP_EOL, FILE_APPEND);
-            $channel->close();
+
         });
 
-        // $amqpConf = Config::getInstance()->getConf('AMQP');
-        // $amqpConf = array_values($amqpConf);
-        // $connection = Container::getInstance()->get(AMQPStreamConnection::class, $amqpConf);
-        //
-        // $channel = $connection->channel();
-        // $channel->queue_declare($exchangeName, false, false, false, false);
-        //
-        // $msg = Container::getInstance()->get(AMQPMessage::class, $sendMsg);
-        // $channel->basic_publish($msg, '', $routeKey);
-        // echo "Sent {$sendMsg}\n";
-        //
-        // $channel->close();
-        // $connection->close();
 
+        //DI方式
+        /*$amqpConf = Config::getInstance()->getConf('AMQP');
+        $amqpConf = array_values($amqpConf);
+        $connection = Container::getInstance()->get(AMQPStreamConnection::class, $amqpConf);
+
+        $channel = $connection->channel();
+        $channel->queue_declare($exchangeName, false, true, false, false);
+
+        $msg = Container::getInstance()->get(AMQPMessage::class, $sendMsg);
+        $channel->basic_publish($msg, '', $routeKey);
+        echo "Sent {$sendMsg}\n";
+
+        $channel->close();
+        $connection->close();*/
+
+    }
+
+    public function testAmqpTopic()
+    {
+        $request = $this->request();
+        $sendMsg = $request->getQueryParam('msg', 'hello world');
+
+        $exchangeName = 'topic_logs';
+        $queueName = '';
+        $routeKey = 'php.laravel';
+        $type = AMQP_EX_TYPE_TOPIC;
+
+        $job = (new TestJob(1, 'hello', ['hehe']))
+            ->setQueueDriver('amqp')
+            ->setAmqpType($type)
+            ->setAmqpExchange($exchangeName)
+            ->setAmqpQueue($queueName)
+            ->setAmqpRouteKey($routeKey);
+        $job->dispatch($job);
+        $this->writeJson(200, 'ok');
+
+        // AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $queueName, $routeKey, $sendMsg) {
+        //     $channel = $amqp->channel();
+        //
+        //     $channel->exchange_declare($exchangeName, AMQP_EX_TYPE_TOPIC, false, true, false);
+        //     $channel->queue_declare($queueName, false, true, false, false);
+        //
+        //     $msg = new AMQPMessage($sendMsg);
+        //     $channel->basic_publish($msg, $exchangeName, $routeKey);
+        //
+        //     pp("send {$sendMsg} ok");
+        //     file_put_contents('/tmp/test.log', $sendMsg . PHP_EOL, FILE_APPEND);
+        //
+        // });
     }
 }

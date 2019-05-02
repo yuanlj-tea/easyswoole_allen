@@ -48,16 +48,14 @@ class TestJob extends Dispatcher
     {
         echo "执行了\n";
 
-        \co::sleep(5);
+        // \co::sleep(5);
         // echo "sleep结束\n";
 
-        // $res = http_get("https://www.baidu.com");
-        // var_dump($res);
-
-        /*MysqlPool::invoke(function (MysqlObject $db) {
-            $res = $db->where('id', 1, '=')->get('tp_article', null, '*');
+        MysqlPool::invoke(function (MysqlObject $db) {
+            // $res = $db->where('id', 1, '=')->get('tp_article', null, '*');
+            $res = $db->where('id', 1, '=')->get('test', null, '*');
             pp($res);
-        });*/
+        });
 
         echo "执行结束\n";
 

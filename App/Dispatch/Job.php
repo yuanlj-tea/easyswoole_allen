@@ -25,6 +25,7 @@ use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\MysqlObject;
 use EasySwoole\EasySwoole\Config;
 use Swoole\Coroutine\Channel;
+use App\Libs\AmqpJob;
 
 class Job
 {
@@ -43,6 +44,16 @@ class Job
      * @var mixed
      */
     private $job_name;
+
+    /**
+     * 允许的amqp类型
+     * @var
+     */
+    private $allowAmqpType = [
+        AMQP_EX_TYPE_DIRECT,
+        AMQP_EX_TYPE_FANOUT,
+        AMQP_EX_TYPE_TOPIC,
+    ];
 
     public function __construct()
     {
@@ -83,7 +94,18 @@ class Job
         //方式2
         if (isset($argv['driver']) && isset($argv['queue'])) {
             $tries = isset($argv['tries']) ? $argv['tries'] : 3;
-            $this->runQueue($argv['driver'], $argv['queue'], $tries);
+            if ($argv['driver'] == 'amqp') {
+                if (!isset($argv['exchange']) || !isset($argv['queue']) || !isset($argv['route_key']) || !isset($argv['type'])) {
+                    throw new \Exception("amqp || 缺少参数");
+
+                    if (!in_array($argv['type'], $this->allowAmqpType)) {
+                        throw new \Exception("amqp || 无效的类型");
+                    }
+                }
+                $this->runAmqp($argv['type'], $argv['exchange'], $argv['queue'], $argv['route_key'], $tries);
+            } else {
+                $this->runQueue($argv['driver'], $argv['queue'], $tries);
+            }
         } else {
             echo "缺少参数\n";
             $this->showHelp();
@@ -98,15 +120,17 @@ class Job
     public function showHelp()
     {
         $helpCode = <<<HELP
-1、支持两种队列驱动：redis、database
+1、支持三种队列驱动：redis、database、amqp
 
 2、database驱动需要生成数据表：php Job.php gen_database
 
-3、支持两种消费方式：
+3、支持三种消费方式：
 
     1、php Job.php class=test_job(DispatchProvider中配置的key)
     
     2、php Job.php driver=redis(驱动名) queue=default_queue_name(队列名) tries=0(失败重试次数)
+    
+    3、(amqp)php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
     
 HELP;
         die($helpCode . "\n");
@@ -165,6 +189,15 @@ HELP;
                 break;
         }
 
+    }
+
+    public function runAmqp($type, $exchangeName, $queueName, $routeKey, $tries = 0)
+    {
+        go(function () use ($type, $exchangeName, $queueName, $routeKey, $tries) {
+            $consumer = new AmqpJob($type, $exchangeName, $queueName, $routeKey, $tries);
+            $consumer->dealMq(true);
+            $consumer->closeConnetct();
+        });
     }
 
     /**
