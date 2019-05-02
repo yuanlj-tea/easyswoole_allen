@@ -215,13 +215,26 @@ class Index extends Controller
 
     public function testAmqpTopic()
     {
-        $request = $this->request();
-        $sendMsg = $request->getQueryParam('msg', 'hello world');
+        //topic 主题订阅
+        //对应consume:php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
+        // $exchangeName = 'topic_logs';
+        // $queueName = '';
+        // $routeKey = 'php.laravel';
+        // $type = AMQP_EX_TYPE_TOPIC;
 
-        $exchangeName = 'topic_logs';
-        $queueName = '';
-        $routeKey = 'php.laravel';
-        $type = AMQP_EX_TYPE_TOPIC;
+        //fanout pub/sub
+        //对应consume:php Job.php driver=amqp type=fanout exchange=logs queue= route_key=test tries=0
+        // $exchangeName = 'logs';
+        // $queueName = '';
+        // $routeKey = 'test';
+        // $type = AMQP_EX_TYPE_FANOUT;
+
+        //direct 一对一,一对多
+        //对应consume:php Job.php driver=amqp type=direct exchange=direct_logs queue=queue route_key=test tries=0
+        $exchangeName = 'direct_logs';
+        $queueName = 'queue';
+        $routeKey = 'test';
+        $type = AMQP_EX_TYPE_DIRECT;
 
         $job = (new TestJob(1, 'hello', ['hehe']))
             ->setQueueDriver('amqp')
@@ -231,6 +244,9 @@ class Index extends Controller
             ->setAmqpRouteKey($routeKey);
         $job->dispatch($job);
         $this->writeJson(200, 'ok');
+
+        $request = $this->request();
+        $sendMsg = $request->getQueryParam('msg', 'hello world');
 
         // AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $queueName, $routeKey, $sendMsg) {
         //     $channel = $amqp->channel();
