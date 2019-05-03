@@ -236,7 +236,7 @@ class Index extends Controller
         $routeKey = 'test';
         $type = AMQP_EX_TYPE_DIRECT;
 
-        $job = (new TestJob(1, 'hello', ['hehe']))
+        $job = (new TestJob(1, 'hello', ['foo']))
             ->setQueueDriver('amqp')
             ->setAmqpType($type)
             ->setAmqpExchange($exchangeName)

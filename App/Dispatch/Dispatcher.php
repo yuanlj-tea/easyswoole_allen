@@ -300,7 +300,7 @@ abstract class Dispatcher
 
         } catch (\Exception $e) {
             throw new \Exception(
-                'file:' . $e->getFile() . ' line:' . $e->getLine() . ' message:' . $e->getMessage() . ' trace:' . $e->getTraceAsString()
+                sprintf("FILE:%s || LINE:%s || MSG:%s",$e->getFile(),$e->getLine(),$e->getMessage())
             );
         }
 

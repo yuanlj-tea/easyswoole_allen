@@ -40,8 +40,9 @@ class AmqpJob extends Amqp
             $obj = $container->get($className, $param);
             $tries = isset($this->tries) ? $this->tries : $obj->getTries();
 
+            //错误重试
             if ($tries > 0) {
-                for ($i = 0; $i <= $tries; $i++) {
+                for ($i = 0; $i < $tries; $i++) {
                     try {
                         $obj->run();
                         break;
@@ -50,12 +51,20 @@ class AmqpJob extends Amqp
                     }
                 }
             } else {
-                $obj->run();
+                $this->run($obj);
             }
         } catch (\Exception $e) {
             pp(sprintf("%s || %s || %s", $e->getFile(), $e->getFile(), $e->getMessage()));
         }
 
+    }
 
+    public function run($obj)
+    {
+        try {
+            $obj->run();
+        } catch (\Exception $e) {
+            echo "异常：{$e->getMessage()}\n";
+        }
     }
 }
