@@ -288,7 +288,6 @@ abstract class Dispatcher
                         $channel->basic_publish($msg, $amqpExchange, $amqpRouteKey);
                     });*/
 
-
                     $amqpConf = Config::getInstance()->getConf('AMQP');
                     $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
                     $publisher->sendMessage($queueJson);

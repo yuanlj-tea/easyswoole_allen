@@ -24,11 +24,20 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
             'Swlib\\Http\\' => 11,
             'SuperClosure\\' => 13,
         ),
+        'R' => 
+        array (
+            'React\\EventLoop\\' => 16,
+        ),
         'P' => 
         array (
+            'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
             'PhpParser\\' => 10,
             'PhpAmqpLib\\' => 11,
+        ),
+        'N' => 
+        array (
+            'NSQClient\\' => 10,
         ),
         'F' => 
         array (
@@ -87,6 +96,14 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             0 => __DIR__ . '/..' . '/jeremeamia/SuperClosure/src',
         ),
+        'React\\EventLoop\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/react/event-loop/src',
+        ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
         'Psr\\Http\\Message\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-message/src',
@@ -98,6 +115,10 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         'PhpAmqpLib\\' => 
         array (
             0 => __DIR__ . '/..' . '/php-amqplib/php-amqplib/PhpAmqpLib',
+        ),
+        'NSQClient\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/moolex/nsqclient/src',
         ),
         'FastRoute\\' => 
         array (

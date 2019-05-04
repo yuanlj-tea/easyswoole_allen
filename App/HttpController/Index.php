@@ -262,4 +262,28 @@ class Index extends Controller
         //
         // });
     }
+
+    public function testNsq()
+    {
+        //及时发布
+        $topic = 'test';
+        $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
+        $message = new \NSQClient\Message\Message('hello world');
+        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+        var_dump($result);
+
+        //延时发布
+        // $topic = 'test';
+        // $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
+        // $message = (new \NSQClient\Message\Message('hello world'))->deferred(5);
+        // $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+        // var_dump($result);
+
+        //批量发布
+        // $topic = 'test';
+        // $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
+        // $message = \NSQClient\Message\Bag::generate(['msg data 1', 'msg data 2']);
+        // $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+        // var_dump($result);
+    }
 }
