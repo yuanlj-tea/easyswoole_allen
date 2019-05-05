@@ -10,7 +10,9 @@ namespace EasySwoole\EasySwoole;
 
 
 use App\Container\Container;
+use App\Process\AmqpConsume;
 use App\Process\HotReload;
+use App\Process\Job\TestJob;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisPool;
@@ -49,7 +51,7 @@ class EasySwooleEvent implements Event
 
         //注册rabbitmq连接池
         PoolManager::getInstance()
-            ->register(AmqpPool::class,$conf->getConf('AMQP.POOL_MAX_NUM'))
+            ->register(AmqpPool::class, $conf->getConf('AMQP.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('AMQP.POOL_MIN_NUM'));
 
 
@@ -79,6 +81,16 @@ class EasySwooleEvent implements Event
             $swooleServer->addProcess($process);
             // $process->write("向子进程写入数据");
         }
+        //amqp消费自定义进程
+        $arg = [
+            'type' => 'direct',
+            'exchange' => 'direct_logs',
+            'queue' => 'queue',
+            'routeKey' => 'test',
+            'class' => TestJob::class //要执行的任务类
+        ];
+        $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
+        $swooleServer->addProcess($amqpConsumeProcess);
 
         //fastCache 数据落地方案
         /*Cache::getInstance()->setTickInterval(5 * 1000);
@@ -110,7 +122,7 @@ class EasySwooleEvent implements Event
 
     public static function onRequest(Request $request, Response $response): bool
     {
-        $response->withHeader('Content-type','application/json;charset=utf-8');
+        $response->withHeader('Content-type', 'application/json;charset=utf-8');
         return true;
     }
 
