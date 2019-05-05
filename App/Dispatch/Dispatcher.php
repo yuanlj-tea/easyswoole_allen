@@ -15,6 +15,7 @@ use App\Utility\Pool\MysqlObject;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
+use EasySwoole\Component\Timer;
 use EasySwoole\EasySwoole\Config;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -289,9 +290,19 @@ abstract class Dispatcher
                     });*/
 
                     $amqpConf = Config::getInstance()->getConf('AMQP');
-                    $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
-                    $publisher->sendMessage($queueJson);
-                    $publisher->closeConnetct();
+
+                    if($delay>0){
+                        Timer::getInstance()->after($delay*1000,function() use($amqpExchange,$amqpQueue,$amqpRouteKey,$amqpType,$amqpConf,$queueJson){
+                            $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
+                            $publisher->sendMessage($queueJson);
+                            $publisher->closeConnetct();
+                        });
+                    }else{
+                        $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
+                        $publisher->sendMessage($queueJson);
+                        $publisher->closeConnetct();
+                    }
+
                     break;
                 default:
                     throw new \Exception('不支持的队列驱动：' . $driver);
