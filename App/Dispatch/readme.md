@@ -1,16 +1,16 @@
 #### 1、介绍
 
-支持两种队列驱动：database、redis；
+支持三种队列驱动：database、redis、rabbitmq；
 
 支持重试机制；
 
-支持延时执行任务；
+database、redis支持延时执行任务；
 
 生产任务时，在协程mysql/redis连接池里生产，完全无阻塞；
 
 引入DI container，反射执行任务逻辑；
 
-消费任务是协程里消费，任务里有io阻塞时，队列消费完全非阻塞；
+database、redis消费任务是协程里消费，任务里有io阻塞时，队列消费完全非阻塞；
 
 database驱动在任务失败时，会入failed_jobs表；
 
@@ -98,9 +98,45 @@ php Job.php gen_database
 
   setQueueName : 设置队列名
 
+- amqp驱动生产、消费说明：
+
+  ```php
+  #生产&消费
+  //topic 主题订阅
+  //对应consume:php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
+  // $exchangeName = 'topic_logs';
+  // $queueName = '';
+  // $routeKey = 'php.laravel';
+  // $type = AMQP_EX_TYPE_TOPIC;
+  
+  //fanout pub/sub
+  //对应consume:php Job.php driver=amqp type=fanout exchange=logs queue= route_key=test tries=0
+  // $exchangeName = 'logs';
+  // $queueName = '';
+  // $routeKey = 'test';
+  // $type = AMQP_EX_TYPE_FANOUT;
+  
+  //direct 一对一,一对多
+  //对应consume:php Job.php driver=amqp type=direct exchange=direct_logs queue=queue route_key=test tries=0
+  $exchangeName = 'direct_logs';
+  $queueName = 'queue';
+  $routeKey = 'test';
+  $type = AMQP_EX_TYPE_DIRECT;
+  
+  $job = (new TestJob(1, 'hello', ['foo']))
+      ->setQueueDriver('amqp')
+      ->setAmqpType($type)
+      ->setAmqpExchange($exchangeName)
+      ->setAmqpQueue($queueName)
+      ->setAmqpRouteKey($routeKey);
+  $job->dispatch($job);
+  ```
+
+  
+
 #### 6、配置文件：
 
-在config.php中设置redis/mysql连接配置：
+在config.php中设置redis、mysql、amqp连接配置：
 
 ```php
 return [
@@ -124,7 +160,17 @@ return [
         'POOL_MAX_NUM'  => '20',
         'POOL_MIN_NUM'  => '5',
         'POOL_TIME_OUT' => '0.5',
-    ]
+    ],
+    'AMQP' => [
+        'host' => '192.168.79.206',
+        'port' => 5672,
+        'user' => 'guest',
+        'pwd' => 'guest',
+        'vhost' => '/',
+        'POOL_MAX_NUM' => '20',
+        'POOL_MIN_NUM' => '5',
+        'POOL_TIME_OUT' => '0.5',
+    ],
 ];
 ```
 
