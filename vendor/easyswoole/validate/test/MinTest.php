@@ -23,7 +23,7 @@ class MinTest extends BaseTestCase
     function testValidCase() {
 
         /*
-         * int
+         * int 测试整数情况(最小值)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->min(10);
@@ -31,7 +31,15 @@ class MinTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-         * float
+        * int 测试整数情况(相等)
+        */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->min(10);
+        $bool = $this->validate->validate(['price' => 10]);
+        $this->assertTrue($bool);
+
+        /*
+         * float 测试浮点数情况(最小值)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->min(10);
@@ -39,7 +47,15 @@ class MinTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-        * 字符串整数
+        * float 测试浮点数情况(相等)
+        */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->min(10.1);
+        $bool = $this->validate->validate(['price' => 10.1]);
+        $this->assertTrue($bool);
+
+        /*
+        * 字符串整数(最小值)
         */
         $this->freeValidate();
         $this->validate->addColumn('price')->min(10);
@@ -47,13 +63,28 @@ class MinTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-         * 字符串整数小数
+        * 字符串整数(相等)
+        */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->min(10);
+        $bool = $this->validate->validate(['price' => '10']);
+        $this->assertTrue($bool);
+
+        /*
+         * 字符串浮点数(最小值)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->min(10);
         $bool = $this->validate->validate(['price' => '10.9']);
         $this->assertTrue($bool);
 
+        /*
+         * 字符串浮点数(相等)
+         */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->min(10.1);
+        $bool = $this->validate->validate(['price' => '10.1']);
+        $this->assertTrue($bool);
     }
 
     /*

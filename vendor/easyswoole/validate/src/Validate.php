@@ -163,7 +163,7 @@ class Validate
      * 给定的参数是否在 $min $max 之间
      * @param SplArray $splArray
      * @param string $column
-     * @param $arg
+     * @param $args
      * @return bool
      */
     private function between(SplArray $splArray, string $column, $args): bool
@@ -204,6 +204,7 @@ class Validate
      * @param SplArray     $splArray
      * @param string       $column
      * @param null|integer $arg
+     * @return bool
      */
     private function decimal(SplArray $splArray, string $column, $arg): bool
     {
@@ -281,14 +282,96 @@ class Validate
      * 验证值是否相等
      * @param SplArray $splArray
      * @param string $column
-     * @param $arg
+     * @param $args
      * @return bool
      */
-    private function equal(SplArray $splArray, string $column, $arg): bool
+    private function equal(SplArray $splArray, string $column, $args): bool
     {
         $data = $splArray->get($column);
-        if ($data !== $arg) {
-            return false;
+        $value = array_shift($args);
+        $strict = array_shift($args);
+        if ($strict) {
+            if ($data !== $value) {
+                return false;
+            }
+        } else {
+            if ($data != $value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 验证值是否不相等
+     * @param SplArray $splArray
+     * @param string $column
+     * @param $args
+     * @return bool
+     */
+    private function different(SplArray $splArray, string $column, $args): bool
+    {
+        $data = $splArray->get($column);
+        $value = array_shift($args);
+        $strict = array_shift($args);
+        if ($strict) {
+            if ($data === $value) {
+                return false;
+            }
+        } else {
+            if ($data == $value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 验证值是否相等
+     * @param SplArray $splArray
+     * @param string $column
+     * @param $args
+     * @return bool
+     */
+    private function equalWithColumn(SplArray $splArray, string $column, $args): bool
+    {
+        $data = $splArray->get($column);
+        $fieldName = array_shift($args);
+        $strict = array_shift($args);
+        $value = $splArray->get($fieldName);
+        if ($strict) {
+            if ($data !== $value) {
+                return false;
+            }
+        } else {
+            if ($data != $value) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 验证值是否不相等
+     * @param SplArray $splArray
+     * @param string $column
+     * @param $args
+     * @return bool
+     */
+    private function differentWithColumn(SplArray $splArray, string $column, $args): bool
+    {
+        $data = $splArray->get($column);
+        $fieldName = array_shift($args);
+        $strict = array_shift($args);
+        $value = $splArray->get($fieldName);
+        if ($strict) {
+            if ($data === $value) {
+                return false;
+            }
+        } else {
+            if ($data == $value) {
+                return false;
+            }
         }
         return true;
     }
@@ -503,7 +586,7 @@ class Validate
                 return false;
             }
         } else if (is_array($data)) {
-            if (strlen($data) >= $min && strlen($data) <= $max) {
+            if (count($data) >= $min && count($data) <= $max) {
                 return true;
             } else {
                 return false;
@@ -514,7 +597,7 @@ class Validate
     }
 
     /**
-     * 验证值不大于(相等视为不通过)
+     * 验证值不大于(相等视为通过)
      * @param SplArray $splArray
      * @param string $column
      * @param $arg
@@ -525,8 +608,8 @@ class Validate
         if (!$this->numeric($splArray, $column, $arg)) {
             return false;
         }
-        $data = $splArray->get($column);
-        if (intval($data) > $arg) {
+        $data = $splArray->get($column) * 1;
+        if ($data > $arg) {
             return false;
         }
         return true;
@@ -548,7 +631,7 @@ class Validate
     }
 
     /**
-     * 验证值不小于(相等视为不通过)
+     * 验证值不小于(相等视为通过)
      * @param SplArray $splArray
      * @param string $column
      * @param $arg
@@ -559,8 +642,8 @@ class Validate
         if (!$this->numeric($splArray, $column, $arg)) {
             return false;
         }
-        $data = $splArray->get($column);
-        if (intval($data) < $arg) {
+        $data = $splArray->get($column) * 1;
+        if ($data < $arg) {
             return false;
         }
         return true;

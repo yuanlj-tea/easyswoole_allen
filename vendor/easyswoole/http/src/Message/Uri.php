@@ -9,7 +9,9 @@
 namespace EasySwoole\Http\Message;
 
 
-class Uri
+use Psr\Http\Message\UriInterface;
+
+class Uri implements UriInterface
 {
     private $host;
     private $userInfo;
@@ -45,7 +47,7 @@ class Uri
     {
         // TODO: Implement getAuthority() method.
         $authority = $this->host;
-        if ($this->userInfo !== '') {
+        if (!empty($this->userInfo)) {
             $authority = $this->userInfo . '@' . $authority;
         }
         if ($this->port !== null) {

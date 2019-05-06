@@ -29,7 +29,7 @@ class Logger implements LoggerInterface
         if($timestamp == null){
             $timestamp = time();
         }
-        $date = date('Y-m-d h:i:s',$timestamp);
+        $date = date('Y-m-d H:i:s',$timestamp);
         $filePrefix = $logCategory.'-'.date('Y-m',$timestamp);
         $filePath = $this->logDir."/{$filePrefix}.log";
         $str = "[$date][{$logCategory}]{$str}";
@@ -41,7 +41,7 @@ class Logger implements LoggerInterface
     {
         // TODO: Implement console() method.
         $time = time();
-        $date = date('Y-m-d h:i:s',$time);
+        $date = date('Y-m-d H:i:s',$time);
         $final = "[{$date}][{$category}]{$str}";
         if($saveLog){
             $this->log($str,$category,$time);

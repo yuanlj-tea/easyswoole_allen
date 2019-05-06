@@ -149,14 +149,63 @@ class Rule
     /**
      * 验证值是否相等
      * @param $compare
+     * @param $strict
      * @param null|string $msg
      * @return $this
      */
-    function equal($compare, $msg = null)
+    function equal($compare, bool $strict = false, $msg = null)
     {
         $this->ruleMap['equal'] = [
             'msg' => $msg,
-            'arg' => $compare
+            'arg' => [$compare, $strict]
+        ];
+        return $this;
+    }
+
+    /**
+     * 验证值是否不相等
+     * @param $compare
+     * @param $strict
+     * @param null|string $msg
+     * @return $this
+     */
+    function different($compare, bool $strict = false, $msg = null)
+    {
+        $this->ruleMap['different'] = [
+            'msg' => $msg,
+            'arg' => [$compare, $strict]
+        ];
+        return $this;
+    }
+
+    /**
+     * 验证值是否相等
+     * @param $fieldName
+     * @param $strict
+     * @param null|string $msg
+     * @return $this
+     */
+    function equalWithColumn($fieldName, bool $strict = false, $msg = null)
+    {
+        $this->ruleMap['equalWithColumn'] = [
+            'msg' => $msg,
+            'arg' => [$fieldName, $strict]
+        ];
+        return $this;
+    }
+
+    /**
+     * 验证值是否不相等
+     * @param $fieldName
+     * @param $strict
+     * @param null|string $msg
+     * @return $this
+     */
+    function differentWithColumn($fieldName, bool $strict = false, $msg = null)
+    {
+        $this->ruleMap['differentWithColumn'] = [
+            'msg' => $msg,
+            'arg' => [$fieldName, $strict]
         ];
         return $this;
     }

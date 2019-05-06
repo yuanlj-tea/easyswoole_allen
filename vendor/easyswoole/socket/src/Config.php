@@ -10,6 +10,7 @@ namespace EasySwoole\Socket;
 
 
 use EasySwoole\Socket\AbstractInterface\ParserInterface;
+use EasySwoole\Socket\Exception\Exception;
 
 class Config
 {
@@ -58,16 +59,29 @@ class Config
     /**
      * @return mixed
      */
-    public function getParser()
+    public function getParser():?ParserInterface
     {
+        if(is_string($this->parser)){
+            $class = $this->parser;
+            $this->parser = new $class();
+        }
         return $this->parser;
     }
 
-    /**
-     * @param mixed $parser
-     */
     public function setParser($parser): void
     {
+        if(is_string($parser)){
+            try{
+                $ref = new \ReflectionClass($parser);
+                if(!$ref->implementsInterface(ParserInterface::class)){
+                    throw new Exception("parser not a instance of ParserInterface");
+                }
+            }catch (\Throwable $throwable){
+                throw new Exception($throwable->getMessage());
+            }
+        }else if(!$parser instanceof ParserInterface){
+            throw new Exception("parser not a instance of ParserInterface");
+        }
         $this->parser = $parser;
     }
 

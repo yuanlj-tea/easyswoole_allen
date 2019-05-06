@@ -9,7 +9,9 @@
 namespace EasySwoole\Http\Message;
 
 
-class ServerRequest extends Request
+use Psr\Http\Message\ServerRequestInterface;
+
+class ServerRequest extends Request implements ServerRequestInterface
 {
     private $attributes = [];
     private $cookieParams = [];

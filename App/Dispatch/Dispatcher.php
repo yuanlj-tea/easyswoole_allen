@@ -88,9 +88,12 @@ abstract class Dispatcher
      * @var
      */
     private static $allowAmqpType = [
-        AMQP_EX_TYPE_DIRECT,
-        AMQP_EX_TYPE_FANOUT,
-        AMQP_EX_TYPE_TOPIC,
+        // AMQP_EX_TYPE_DIRECT,
+        // AMQP_EX_TYPE_FANOUT,
+        // AMQP_EX_TYPE_TOPIC,
+        'direct',
+        'fanout',
+        'topic'
     ];
 
     /**
@@ -179,7 +182,7 @@ abstract class Dispatcher
      * @return $this
      * @throws \Exception
      */
-    public function setAmqpType(string $amqpType = AMQP_EX_TYPE_DIRECT)
+    public function setAmqpType(string $amqpType = 'direct')
     {
         if (static::$queueDriver != 'amqp') {
             throw new \Exception("只有amqp类型,才能设置此参数");

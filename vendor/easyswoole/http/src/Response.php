@@ -30,17 +30,14 @@ class Response extends MessageResponse
         $this->withAddedHeader('Server','EasySwoole');
     }
 
-    function end($status = self::STATUS_LOGICAL_END,?string $endString = null){
-        $this->isEndResponse = $status;
-        //发送文件的时候，底层自动end,不需要手动end
-        if($status == self::STATUS_REAL_END && (!$this->sendFile)){
-            $this->response->end($endString);
-        }
+    function end(){
+        $this->isEndResponse = self::STATUS_LOGICAL_END;
     }
 
     function __response():bool
     {
         if($this->isEndResponse <= self::STATUS_REAL_END){
+            $this->isEndResponse = self::STATUS_REAL_END;
             //结束处理
             $status = $this->getStatusCode();
             $this->response->status($status);
@@ -62,8 +59,9 @@ class Response extends MessageResponse
 
             if($this->sendFile != null){
                 $this->response->sendfile($this->sendFile);
+            }else{
+                $this->response->end($write);
             }
-            $this->end(self::STATUS_REAL_END,$write);
             return true;
         }else{
             return false;

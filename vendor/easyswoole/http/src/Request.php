@@ -14,7 +14,7 @@ use EasySwoole\Http\Message\Stream;
 use EasySwoole\Http\Message\UploadFile;
 use EasySwoole\Http\Message\Uri;
 
-class Request  extends ServerRequest
+class Request extends ServerRequest
 {
     private $request;
 

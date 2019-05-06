@@ -23,7 +23,7 @@ class MaxTest extends BaseTestCase
     function testValidCase() {
 
         /*
-         * int
+         * int 测试整数情况(不超过)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->max(12);
@@ -31,7 +31,15 @@ class MaxTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-         * float
+         * int 测试整数情况(相等)
+         */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->max(12);
+        $bool = $this->validate->validate(['price' => 12]);
+        $this->assertTrue($bool);
+
+        /*
+         * float 测试浮点数情况(不超过)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->max(12);
@@ -39,7 +47,15 @@ class MaxTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-        * 字符串整数
+         * float 测试浮点数情况(相等)
+         */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->max(10.9);
+        $bool = $this->validate->validate(['price' => 10.9]);
+        $this->assertTrue($bool);
+
+        /*
+        * 字符串整数 测试字符串整数情况(不超过)
         */
         $this->freeValidate();
         $this->validate->addColumn('price')->max(12);
@@ -47,11 +63,27 @@ class MaxTest extends BaseTestCase
         $this->assertTrue($bool);
 
         /*
-         * 字符串整数小数
+        * 字符串整数 测试字符串整数情况(相等)
+        */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->max(12);
+        $bool = $this->validate->validate(['price' => '12']);
+        $this->assertTrue($bool);
+
+        /*
+         * 字符串整数小数 测试字符串浮点数情况(不超过)
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->max(12);
         $bool = $this->validate->validate(['price' => '10.9']);
+        $this->assertTrue($bool);
+
+        /*
+       * 字符串整数 测试字符串浮点数情况(相等)
+       */
+        $this->freeValidate();
+        $this->validate->addColumn('price')->max(12.1);
+        $bool = $this->validate->validate(['price' => '12.1']);
         $this->assertTrue($bool);
 
     }
@@ -75,7 +107,7 @@ class MaxTest extends BaseTestCase
          */
         $this->freeValidate();
         $this->validate->addColumn('price')->max(20);
-        $bool = $this->validate->validate(['price' => 21.1]);
+        $bool = $this->validate->validate(['price' => 20.1]);
         $this->assertFalse($bool);
         $this->assertEquals("price的值不能大于20", $this->validate->getError()->__toString());
 

@@ -16,7 +16,7 @@ class ContextTest extends TestCase
 {
     function __construct(?string $name = null, array $data = [], string $dataName = '')
     {
-        ContextManager::getInstance()->handler('handler',new ContextHandler());
+        ContextManager::getInstance()->registerItemHandler('handler',new ContextContextItemHandler());
         parent::__construct($name, $data, $dataName);
     }
 

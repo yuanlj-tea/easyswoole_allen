@@ -13,16 +13,40 @@ use App\Dispatch\Dispatcher;
 
 class AmqpDispatch implements DispatchInterface
 {
+    /**
+     * 驱动名
+     * @var string
+     */
     private $queueDriver = 'amqp';
 
+    /**
+     * 类型
+     * @var
+     */
     private $type;
 
+    /**
+     * exchange名
+     * @var
+     */
     private $exchange;
 
+    /**
+     * 队列名
+     * @var
+     */
     private $queue;
 
+    /**
+     * routeKey名
+     * @var
+     */
     private $routeKey;
 
+    /**
+     * 延迟时间
+     * @var int
+     */
     private $delay = 0;
 
     public function __construct(Dispatcher $dispatcher, $type, $exchange, $queue, $routeKey, $delay = 0)

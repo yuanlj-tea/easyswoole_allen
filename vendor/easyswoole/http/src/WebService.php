@@ -12,7 +12,7 @@ namespace EasySwoole\Http;
 class WebService
 {
     private $dispatcher;
-    final function __construct($controllerNameSpace = 'App\\HttpController\\',$depth = 5,$maxPoolNum = 100)
+    final function __construct($controllerNameSpace = 'App\\HttpController\\',$depth = 5,$maxPoolNum = 200)
     {
         $this->dispatcher = new Dispatcher($controllerNameSpace,$depth,$maxPoolNum);
     }

@@ -74,9 +74,12 @@ abstract class Amqp
      * @var array
      */
     private $allowType = [
-        AMQP_EX_TYPE_DIRECT,
-        AMQP_EX_TYPE_FANOUT,
-        AMQP_EX_TYPE_TOPIC,
+        // AMQP_EX_TYPE_DIRECT,
+        // AMQP_EX_TYPE_FANOUT,
+        // AMQP_EX_TYPE_TOPIC,
+        'direct',
+        'fanout',
+        'topic'
     ];
 
     /**

@@ -69,7 +69,30 @@ class SplArray extends \ArrayObject
             if(isset($data[$key])){
                 $data = $data[$key];
             }else{
-                return null;
+                if($key == '*'){
+                    $temp = [];
+                    if(is_array($data)){
+                        if(!empty($paths)){
+                            $path = implode("/",$paths);
+                        }else{
+                            $path = null;
+                        }
+                        foreach ($data as $key => $datum){
+                            if(is_array($datum)){
+                                $ctemp = (new SplArray($datum))->get($path);
+                                if($ctemp !== null){
+                                    $temp[][$path] = $ctemp;
+                                }
+                            }else if($datum !== null){
+                                $temp[$key] = $datum;
+                            }
+
+                        }
+                    }
+                    return $temp;
+                }else{
+                    return null;
+                }
             }
         }
         return $data;
@@ -198,7 +221,7 @@ class SplArray extends \ArrayObject
 
     public function flush():SplArray
     {
-        foreach ($this as $key => $item){
+        foreach ($this->getArrayCopy() as $key => $item){
             unset($this[$key]);
         }
         return $this;
@@ -207,6 +230,7 @@ class SplArray extends \ArrayObject
     public function loadArray(array $data)
     {
         parent::__construct($data);
+        return $this;
     }
 
     /*
@@ -246,7 +270,7 @@ class SplArray extends \ArrayObject
                     }
                     $parser($ch,$v);
                 } else {
-                    if (is_numeric($v)){
+                    if (is_numeric($k)){
                         $xml->addChild($k, $v);
                     }else{
                         if($CD_DATA){

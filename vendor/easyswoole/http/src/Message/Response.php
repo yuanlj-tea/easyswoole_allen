@@ -8,7 +8,9 @@
 
 namespace EasySwoole\Http\Message;
 
-class Response extends Message
+use Psr\Http\Message\ResponseInterface;
+
+class Response extends Message implements ResponseInterface
 {
     private $statusCode = 200;
     private $reasonPhrase = 'OK';

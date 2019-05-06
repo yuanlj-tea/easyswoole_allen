@@ -27,22 +27,33 @@ class Console implements CommandInterface
     public function exec(array $args): ?string
     {
         // TODO: Implement exec() method.
-        Core::getInstance()->initialize();
-        if(in_array('produce',$args)){
-            Core::getInstance()->setIsDev(false);
-        }
         $conf = Config::getInstance()->getConf('CONSOLE');
-        $client = new Client($conf['HOST'],$conf['PORT']);
-        if($client->connect()){
-            swoole_event_add(STDIN,function()use($client){
-                $ret = trim(fgets(STDIN));
-                if(!empty($ret)){
-                    $client->sendCommand($ret);
-                }
-            });
-        }else{
-            return "connect to  tcp://".$conf['HOST'].":".$conf['PORT']." fail ";
-        }
+        go(function ()use($conf){
+            $client = new Client($conf['LISTEN_ADDRESS'],$conf['PORT']);
+            if($client->connect()){
+                echo "connect to  tcp://".$conf['LISTEN_ADDRESS'].":".$conf['PORT']." success \n";
+                go(function ()use($client){
+                    while (1){
+                        $data = $client->recv(-1);
+                        if(!empty($data)){
+                            echo $data."\n";
+                        }else if($client !== false){
+                            exit();
+                        }
+                    };
+                });
+                swoole_event_add(STDIN,function()use($client){
+                    $ret = trim(fgets(STDIN));
+                    if(!empty($ret)){
+                        go(function ()use($client,$ret){
+                            $client->sendCommand($ret);
+                        });
+                    }
+                });
+            }else{
+                echo "connect to  tcp://".$conf['LISTEN_ADDRESS'].":".$conf['PORT']." fail \n";
+            }
+        });
         return null;
     }
 

@@ -2,15 +2,14 @@
 /**
  * Created by PhpStorm.
  * User: yf
- * Date: 2018/10/21
- * Time: 下午10:13
+ * Date: 2019-03-07
+ * Time: 14:45
  */
 
 namespace EasySwoole\EasySwoole\Console;
 
-/*
- * 注意，该客户端仅供cli或者独立process使用
- */
+
+use Swoole\Coroutine\Client as CoClient;
 
 class Client
 {
@@ -24,83 +23,41 @@ class Client
         $this->port = $port;
     }
 
-    function close():bool
-    {
-        if($this->client instanceof \swoole_client && $this->client->isConnected()){
-            $this->client->close();
-            $this->client = null;
-            return true;
-        }else if($this->client instanceof \swoole_client){
-            //若服务端主动断开的时候
-            $this->client = null;
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-    function getClient():?\swoole_client
+    function getClient():?CoClient
     {
         return $this->client;
     }
 
     function connect():bool
     {
-        $this->close();
-
-        $this->client = new \swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
+        $this->client = new CoClient(SWOOLE_SOCK_TCP);
         $this->client->set(
             [
-                'open_length_check' => true,
-                'package_length_type'   => 'N',
-                'package_length_offset' => 0,
-                'package_body_offset'   => 4,
-                'package_max_length'    => 1024*1024
+                "open_eof_split" => true,
+                'package_eof' => "\r\n",
             ]
         );
-        $this->client->on("connect", function(\swoole_client $cli) {
-            fwrite(STDOUT, "connect to tcp://{$this->host}:{$this->port} succeed \n");
-        });
-
-        $this->client->on("close", function($cli){
-            $this->close();
-            fwrite(STDOUT,"tcp://{$this->host}:{$this->port} disconnect \n");
-            swoole_event_del(STDIN);
-        });
-
-        $this->client->on("error", function($cli){
-            $this->close();
-            fwrite(STDOUT,"connection tcp://{$this->host}:{$this->port} error \n");
-            swoole_event_del(STDIN);
-        });
-
-        $this->client->on("receive", function($cli, $data) {
-            $str = unserialize(ConsoleProtocolParser::unpack($data));
-            echo $str . PHP_EOL;
-        });
         return $this->client->connect($this->host, $this->port, 0.5);
     }
 
     public function sendCommand(string $commandLine):bool
     {
-        if($this->client instanceof \swoole_client && $this->client->isConnected()){
-            $commandList = $this->commandParser($commandLine);
-            $this->client->send(ConsoleProtocolParser::pack(serialize($commandList)));
+        if($this->client instanceof CoClient && $this->client->isConnected()){
+            $this->client->send($commandLine."\r\n");
             return true;
         }else{
             return false;
         }
     }
 
-    private function commandParser(string $data):array
+    public function recv(float $timeout = -1)
     {
-        $list = explode(' ',$data);
-        $ret = [];
-        foreach ($list as $item){
-            if(!empty($item)){
-                array_push($ret,$item);
+        if($this->client instanceof CoClient && $this->client->isConnected()){
+            $data = $this->client->recv($timeout);
+            if($data !== false){
+                return trim($data);
             }
         }
-        return $ret;
+        return false;
     }
 }

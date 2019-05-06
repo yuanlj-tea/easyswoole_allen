@@ -118,7 +118,7 @@ class Dispatcher
         }
         if($client instanceof WebSocket){
             if($server->exist($client->getFd())){
-                $server->push($client->getFd(),$data);
+                $server->push($client->getFd(),$data,$response->getOpCode(),$response->isFinish());
             }
         }else if($client instanceof Tcp){
             if($server->exist($client->getFd())){

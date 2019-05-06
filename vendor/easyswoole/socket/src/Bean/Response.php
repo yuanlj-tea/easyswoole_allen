@@ -19,7 +19,11 @@ class Response extends SplBean
 
     protected $status = self::STATUS_OK;
     protected $message = null;
-
+    /*
+     * 以下参数仅仅ws推送可用
+     */
+    protected $opCode = WEBSOCKET_OPCODE_TEXT;
+    protected $finish = true;
     /**
      * @return string
      */
@@ -51,4 +55,37 @@ class Response extends SplBean
     {
         $this->message = $message;
     }
+
+    /**
+     * @return int
+     */
+    public function getOpCode(): int
+    {
+        return $this->opCode;
+    }
+
+    /**
+     * @param int $opCode
+     */
+    public function setOpCode(int $opCode): void
+    {
+        $this->opCode = $opCode;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFinish(): bool
+    {
+        return $this->finish;
+    }
+
+    /**
+     * @param bool $finish
+     */
+    public function setFinish(bool $finish): void
+    {
+        $this->finish = $finish;
+    }
+
 }

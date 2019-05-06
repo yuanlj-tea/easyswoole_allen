@@ -1,3 +1,4 @@
+English  |  [中文](./README.zh-CN.md)  
 ![](easyswoole.png)
 ## EasySwoole
 
@@ -103,11 +104,11 @@ php easyswoole start
 
 ## DockerFile
 ```
-FROM php:7.2
+FROM php:7.3
 
 # Version
 ENV PHPREDIS_VERSION 4.0.1
-ENV SWOOLE_VERSION 4.2.13
+ENV SWOOLE_VERSION 4.3.3
 ENV EASYSWOOLE_VERSION 3.x-dev
 
 # Timezone
@@ -176,5 +177,11 @@ ENTRYPOINT ["php", "/var/www/code/easyswoole", "start"]
 - [Home Page](https://www.easyswoole.com)
 - [Git For Doc](https://github.com/easy-swoole/doc)
 - [Git For Demo](https://github.com/easy-swoole/demo)
-- QQ Group : **633921431**
-
+- QQ交流群
+    - VIP群 579434607 （本群需要付费599元）
+    - EasySwoole官方一群 633921431(已满)
+    - EasySwoole官方二群 709134628
+    
+- 商业支持：
+    - QQ 291323003
+    - EMAIL admin@fosuss.com

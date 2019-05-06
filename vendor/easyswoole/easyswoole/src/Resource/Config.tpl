@@ -16,9 +16,10 @@ return [
         'RUN_MODEL' => SWOOLE_PROCESS,
         'SETTING' => [
             'worker_num' => 8,
-            'max_request' => 5000,
             'task_worker_num' => 8,
-            'task_max_request' => 1000,
+            'reload_async' => true,
+            'task_enable_coroutine' => true,
+            'max_wait_time'=>5
         ],
     ],
     'TEMP_DIR' => null,
@@ -28,22 +29,11 @@ return [
         'LISTEN_ADDRESS' => '127.0.0.1',
         'HOST' => '127.0.0.1',
         'PORT' => 9500,
-        'EXPIRE' => '120',
-        'PUSH_LOG' => true,
-        'AUTH' => [
-            [
-                'USER'=>'root',
-                'PASSWORD'=>'123456',
-                'MODULES'=>[
-                    'auth','server','help'
-                ],
-                'PUSH_LOG' => true,
-            ]
-        ]
-    ],
-    'FAST_CACHE' => [
-        'PROCESS_NUM' => 0,
-        'BACKLOG' => 256,
+        'USER' => 'root',
+        'PASSWORD' =>'123456'
     ],
     'DISPLAY_ERROR' => true,
+    'PHAR' => [
+        'EXCLUDE' => ['.idea', 'Log', 'Temp', 'easyswoole', 'easyswoole.install']
+    ]
 ];

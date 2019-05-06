@@ -12,20 +12,26 @@ namespace EasySwoole\Spl;
 /*
  * 仅能获取protected 和public成员变量
  */
+
+use EasySwoole\Spl\Exception\Exception;
+
 class SplBean implements \JsonSerializable
 {
     const FILTER_NOT_NULL = 1;
     const FILTER_NOT_EMPTY = 2;//0 不算empty
 
     private $_keyMap = [];
+    private $_classMap = [];
 
     public function __construct(array $data = null,$autoCreateProperty = false)
     {
         $this->_keyMap = $this->setKeyMapping();
+        $this->_classMap = $this->setClassMapping();
         if($data){
             $this->arrayToBean($data,$autoCreateProperty);
         }
         $this->initialize();
+        $this->classMap();
     }
 
     final public function allProperty():array
@@ -34,6 +40,8 @@ class SplBean implements \JsonSerializable
         foreach ($this as $key => $item){
             array_push($data,$key);
         }
+        unset($data['_keyMap']);
+        unset($data['_classMap']);
         return $data;
     }
 
@@ -96,7 +104,7 @@ class SplBean implements \JsonSerializable
         return $array;
     }
 
-    final public function arrayToBean(array $data,$autoCreateProperty = false):SplBean
+    final private function arrayToBean(array $data,$autoCreateProperty = false):SplBean
     {
         //先做keyMap转化
         if(!empty($this->_keyMap)){
@@ -137,6 +145,7 @@ class SplBean implements \JsonSerializable
             $data[$key] = $item;
         }
         unset($data['_keyMap']);
+        unset($data['_classMap']);
         return $data;
     }
 
@@ -156,17 +165,70 @@ class SplBean implements \JsonSerializable
     {
         return [];
     }
+    /*
+     * return ['property'=>class string]
+     */
+    protected function setClassMapping():array
+    {
+        return [];
+    }
 
     public function __toString()
     {
         return json_encode($this->jsonSerialize(),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
     }
 
+    /*
+     * 恢复到属性定义的默认值
+     */
     public function restore(array $data = [])
     {
         $this->arrayToBean($data+get_class_vars(static::class));
         $this->initialize();
+        $this->classMap();
         return $this;
+    }
+
+    private function classMap()
+    {
+        if(!empty($this->_classMap)){
+            $propertyList = $this->allProperty();
+            foreach ($this->_classMap as $property => $class){
+                if(in_array($property,$propertyList)){
+                    $val = $this->$property;
+                    $force = true;
+                    if(strpos($class,'@') !== false){
+                        $force = false;
+                        $class = substr($class,1);
+                    }
+                    if(is_object($val)){
+                        if(!$val instanceof $class){
+                            throw new Exception("value for property:{$property} dot not match in ".(static::class));
+                        }
+                    }else if($val === null){
+                        if($force){
+                            $this->$property = $this->createClass($class);
+                        }
+                    }else{
+                        $this->$property = $this->createClass($class,$val);
+                    }
+                }else{
+                    throw new Exception("property:{$property} not exist in ".(static::class));
+                }
+            }
+        }
+    }
+
+    /**
+     * @param string $class
+     * @param null $arg
+     * @return object
+     * @throws \ReflectionException
+     */
+    private function createClass(string $class, $arg = null)
+    {
+        $ref = new \ReflectionClass($class);
+        return $ref->newInstance($arg);
     }
 
 }

@@ -53,13 +53,11 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
             'EasySwoole\\Rpc\\' => 15,
             'EasySwoole\\Mysqli\\' => 18,
             'EasySwoole\\Http\\' => 16,
-            'EasySwoole\\FastCache\\' => 21,
             'EasySwoole\\EasySwoole\\' => 22,
             'EasySwoole\\Curl\\' => 16,
+            'EasySwoole\\Console\\' => 19,
             'EasySwoole\\Component\\Tests\\' => 27,
             'EasySwoole\\Component\\' => 21,
-            'EasySwoole\\Actor\\Test\\' => 22,
-            'EasySwoole\\Actor\\' => 17,
         ),
         'C' => 
         array (
@@ -156,10 +154,6 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             0 => __DIR__ . '/..' . '/easyswoole/http/src',
         ),
-        'EasySwoole\\FastCache\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/easyswoole/fast-cache/src',
-        ),
         'EasySwoole\\EasySwoole\\' => 
         array (
             0 => __DIR__ . '/..' . '/easyswoole/easyswoole/src',
@@ -168,6 +162,10 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             0 => __DIR__ . '/..' . '/easyswoole/curl/src',
         ),
+        'EasySwoole\\Console\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/easyswoole/console/src',
+        ),
         'EasySwoole\\Component\\Tests\\' => 
         array (
             0 => __DIR__ . '/..' . '/easyswoole/component/Tests',
@@ -175,14 +173,6 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         'EasySwoole\\Component\\' => 
         array (
             0 => __DIR__ . '/..' . '/easyswoole/component/src',
-        ),
-        'EasySwoole\\Actor\\Test\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/easyswoole/actor/test',
-        ),
-        'EasySwoole\\Actor\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/easyswoole/actor/src',
         ),
         'Cron\\' => 
         array (

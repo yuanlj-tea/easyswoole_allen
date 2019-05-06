@@ -17,20 +17,22 @@ class ContextManager
 {
     use Singleton;
 
-    private $handler = [];
+    private $contextHandler = [];
 
     private $context = [];
 
-    public function handler($key,HandlerInterface $handler):ContextManager
+    private $deferList = [];
+
+    public function registerItemHandler($key, ContextItemHandlerInterface $handler):ContextManager
     {
-        $this->handler[$key] = $handler;
+        $this->contextHandler[$key] = $handler;
         return $this;
     }
 
     public function set($key,$value,$cid = null):ContextManager
     {
-        if(isset($this->handler[$key])){
-            throw new ModifyError('key is already been register for handler');
+        if(isset($this->contextHandler[$key])){
+            throw new ModifyError('key is already been register for context item handler');
         }
         $cid = $this->getCid($cid);
         $this->context[$cid][$key] = $value;
@@ -43,9 +45,9 @@ class ContextManager
         if(isset($this->context[$cid][$key])){
             return $this->context[$cid][$key];
         }
-        if(isset($this->handler[$key])){
-            /** @var HandlerInterface $handler */
-            $handler = $this->handler[$key];
+        if(isset($this->contextHandler[$key])){
+            /** @var ContextItemHandlerInterface $handler */
+            $handler = $this->contextHandler[$key];
             $this->context[$cid][$key] = $handler->onContextCreate();
             return $this->context[$cid][$key];
         }
@@ -56,10 +58,11 @@ class ContextManager
     {
         $cid = $this->getCid($cid);
         if(isset($this->context[$cid][$key])){
-            if(isset($this->handler[$key])){
-                /** @var HandlerInterface $handler */
-                $handler = $this->handler[$key];
+            if(isset($this->contextHandler[$key])){
+                /** @var ContextItemHandlerInterface $handler */
+                $handler = $this->contextHandler[$key];
                 $item = $this->context[$cid][$key];
+                unset($this->context[$cid][$key]);
                 return $handler->onDestroy($item);
             }
             unset($this->context[$cid][$key]);
@@ -84,7 +87,15 @@ class ContextManager
     public function getCid($cid = null):int
     {
         if($cid === null){
-            return Coroutine::getUid();
+            $cid = Coroutine::getUid();
+            if(!isset($this->deferList[$cid])){
+                $this->deferList[$cid] = true;
+                defer(function ()use($cid){
+                    unset($this->deferList[$cid]);
+                    $this->destroy($cid);
+                });
+            }
+            return $cid;
         }
         return $cid;
     }

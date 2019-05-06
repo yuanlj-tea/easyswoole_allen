@@ -35,14 +35,7 @@ class Index extends Controller
 {
     public function index()
     {
-
-        $job = (new TestJob(1, 'hello', ['hehe']))->setDelay(0 * 1000)->setQueueDriver('redis')->setQueueName("hehe");
-        // $job = (new TestJob(1,'hello',['hehe']));
-        $job->dispatch($job);
-        echo "ok\n";
         $this->writeJson(200, 'ok');
-
-
         /*RedisPool::invoke(function (RedisObject $redis){
             $key = 'user:1:api_count';
             $limit = 1;
@@ -214,6 +207,14 @@ class Index extends Controller
 
     }
 
+    public function testRedisQueue()
+    {
+        //对应consume:php Job.php driver=redis queue=hehe tries=0
+        $job = (new TestJob(1, 'hello', ['hehe']))->setDelay(0 * 1000)->setQueueDriver('redis')->setQueueName("hehe");
+        $job->dispatch($job);
+        $this->writeJson(200, 'ok');
+    }
+
     public function testAmqpTopic()
     {
         //topic 主题订阅
@@ -235,36 +236,10 @@ class Index extends Controller
         $exchangeName = 'direct_logs';
         $queueName = 'queue';
         $routeKey = 'test';
-        $type = AMQP_EX_TYPE_DIRECT;
+        $type = 'direct';
 
         new AmqpDispatch(new TestJob(1,'bar',['foo']),$type,$exchangeName,$queueName,$routeKey);
-
-        // $job = (new TestJob(1, 'bar', ['foo']))
-        //     ->setQueueDriver('amqp')
-        //     ->setDelay(5)
-        //     ->setAmqpType($type)
-        //     ->setAmqpExchange($exchangeName)
-        //     ->setAmqpQueue($queueName)
-        //     ->setAmqpRouteKey($routeKey);
-        // $job->dispatch($job);
         $this->writeJson(200, 'ok');
-
-        $request = $this->request();
-        $sendMsg = $request->getQueryParam('msg', 'hello world');
-
-        // AmqpPool::invoke(function (AmqpObject $amqp) use ($exchangeName, $queueName, $routeKey, $sendMsg) {
-        //     $channel = $amqp->channel();
-        //
-        //     $channel->exchange_declare($exchangeName, AMQP_EX_TYPE_TOPIC, false, true, false);
-        //     $channel->queue_declare($queueName, false, true, false, false);
-        //
-        //     $msg = new AMQPMessage($sendMsg);
-        //     $channel->basic_publish($msg, $exchangeName, $routeKey);
-        //
-        //     pp("send {$sendMsg} ok");
-        //     file_put_contents('/tmp/test.log', $sendMsg . PHP_EOL, FILE_APPEND);
-        //
-        // });
     }
 
     public function testNsq()

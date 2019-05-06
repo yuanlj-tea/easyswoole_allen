@@ -9,7 +9,10 @@
 namespace EasySwoole\Http\Message;
 
 
-class Message
+use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\StreamInterface;
+
+class Message implements MessageInterface
 {
     private $protocolVersion = '1.1';
     private $headers = [];
@@ -121,7 +124,7 @@ class Message
         return $this->body;
     }
 
-    public function withBody(Stream $body)
+    public function withBody(StreamInterface $body)
     {
         // TODO: Implement withBody() method.
         $this->body = $body;

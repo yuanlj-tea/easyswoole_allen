@@ -9,7 +9,10 @@
 namespace EasySwoole\Http\Message;
 
 
-class Request extends Message
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\UriInterface;
+
+class Request extends Message implements RequestInterface
 {
     private $uri;
     private $method;
@@ -71,7 +74,7 @@ class Request extends Message
         return $this->uri;
     }
 
-    public function withUri(Uri $uri, $preserveHost = false)
+    public function withUri(UriInterface $uri, $preserveHost = false)
     {
         // TODO: Implement withUri() method.
         if ($uri === $this->uri) {

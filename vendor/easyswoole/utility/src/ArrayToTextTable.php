@@ -8,37 +8,6 @@
 
 namespace EasySwoole\Utility;
 
-//本ArrayToTextTable改编自网络，兼容适配了utf8和不再依赖第三方包
-/*
- * $data = [
-    [
-        '姓名' => 'James',
-        '年龄' => '20',
-        'sex'=>'男'
-    ],
-    [
-        '姓名' => '这是测试姓名啊',
-        '年龄' => 50,
-        'email' => '291323003@qq.com',
-    ],
-];
-
-$renderer = new \EasySwoole\Utility\ArrayToTextTable($data);
-////$renderer->setDisplayHeader(false);
-//$renderer->setFormatter(function (&$value,$key){
-//    if($key == 'sex'){
-//        if(empty($value)){
-//            $value = '未知性别';
-//        }
-//    }else if($key == 'email'){
-//        if(empty($value)){
-//            $value = '未知邮箱';
-//        }
-//    }
-//});
-$table =  $renderer->getTable();
- */
-
 class ArrayToTextTable
 {
     const AlignLeft   = STR_PAD_RIGHT;
@@ -54,7 +23,8 @@ class ArrayToTextTable
     protected $valuesAlignment;
     protected $formatter;
 
-    public function __construct($data = []) {
+    public function __construct($data = [])
+    {
         $this->setData($data)
             ->setIndentation('')
             ->setKeysAlignment(self::AlignCenter)
@@ -62,12 +32,13 @@ class ArrayToTextTable
             ->setFormatter(null);
     }
 
-    public function __toString() {
+    public function __toString()
+    {
         return $this->getTable();
     }
 
-    public function getTable($data = null) {
-
+    public function getTable($data = null)
+    {
         if (!is_null($data))
             $this->setData($data);
 
@@ -92,73 +63,37 @@ class ArrayToTextTable
         return $table;
     }
 
-    public function getData() {
-        return $this->data;
-    }
-
-    public function getIndentation() {
-        return $this->indentation;
-    }
-
-    public function getDisplayHeader() {
-        return $this->displayHeader;
-    }
-
-    public function getKeysAlignment() {
-        return $this->keysAlignment;
-    }
-
-    public function getValuesAlignment() {
-        return $this->valuesAlignment;
-    }
-
-    public function getFormatter() {
-        return $this->formatter;
-    }
-
-    public function setData($data) {
-        if (!is_array($data)){
-            $data = [];
-        }
-        $arrayData = [];
-        foreach ($data as $row) {
-            if (is_array($row)){
-                $arrayData[] = $row;
-            } else if (is_object($row)){
-                $arrayData[] = get_object_vars($row);
-            }
-        }
-        $this->data = $arrayData;
-        return $this;
-    }
-
-
-    public function setIndentation($indentation) {
+    public function setIndentation($indentation)
+    {
         $this->indentation = $indentation;
         return $this;
     }
 
-    public function setDisplayHeader(bool $displayHeader) {
+    public function isDisplayHeader(bool $displayHeader)
+    {
         $this->displayHeader = $displayHeader;
         return $this;
     }
 
-    public function setKeysAlignment($keysAlignment) {
+    public function setKeysAlignment($keysAlignment)
+    {
         $this->keysAlignment = $keysAlignment;
         return $this;
     }
 
-    public function setValuesAlignment($valuesAlignment) {
+    public function setValuesAlignment($valuesAlignment)
+    {
         $this->valuesAlignment = $valuesAlignment;
         return $this;
     }
 
-    public function setFormatter($formatter) {
+    public function setFormatter($formatter)
+    {
         $this->formatter = $formatter;
         return $this;
     }
 
-    protected function line($left, $horizontal, $link, $right) {
+    private function line($left, $horizontal, $link, $right) {
         $line = $left;
         foreach ($this->keys as $key){
             $line .= str_repeat($horizontal, $this->widths[$key]+2) . $link;
@@ -170,7 +105,7 @@ class ArrayToTextTable
         return $line . $right;
     }
 
-    protected function row($row, $alignment) {
+    private function row($row, $alignment) {
         $line = '│';
         foreach ($this->keys as $key) {
             $value = isset($row[$key]) ? $row[$key] : '';
@@ -182,7 +117,7 @@ class ArrayToTextTable
         return $line;
     }
 
-    protected function prepare() {
+    private function prepare() {
         $this->keys = [];
         $this->widths = [];
         $data = $this->data;
@@ -221,7 +156,7 @@ class ArrayToTextTable
         return $data;
     }
 
-    protected function setWidth($key, $value) {
+    private function setWidth($key, $value) {
         if (!isset($this->widths[$key])){
             $this->widths[$key] = 0;
         }
@@ -231,11 +166,28 @@ class ArrayToTextTable
         }
     }
 
-    protected static function mb_str_pad($input, $pad_length, $pad_string = ' ', $pad_type = STR_PAD_RIGHT, $encoding = null) {
+    private  function mb_str_pad($input, $pad_length, $pad_string = ' ', $pad_type = STR_PAD_RIGHT, $encoding = null) {
         if ($encoding === null){
             $encoding = mb_internal_encoding();
         }
         $diff = strlen($input) - (strlen($input) + mb_strlen($input,$encoding)) / 2;
         return str_pad($input, $pad_length + $diff, $pad_string, $pad_type);
+    }
+
+    private function setData($data)
+    {
+        if (!is_array($data)){
+            $data = [];
+        }
+        $arrayData = [];
+        foreach ($data as $row) {
+            if (is_array($row)){
+                $arrayData[] = $row;
+            } else if (is_object($row)){
+                $arrayData[] = get_object_vars($row);
+            }
+        }
+        $this->data = $arrayData;
+        return $this;
     }
 }

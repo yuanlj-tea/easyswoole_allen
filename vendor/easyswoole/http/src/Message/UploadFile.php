@@ -9,7 +9,9 @@
 namespace EasySwoole\Http\Message;
 
 
-class UploadFile
+use Psr\Http\Message\UploadedFileInterface;
+
+class UploadFile implements UploadedFileInterface
 {
     private $tempName;
     private $stream;

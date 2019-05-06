@@ -27,6 +27,7 @@ abstract class AbstractAmqp extends Amqp
         if(!is_array($queueData) || empty($queueData)){
             return;
         }
+        // $this->run($queueData);
         TaskManager::processAsync($this->run($queueData));
     }
 
