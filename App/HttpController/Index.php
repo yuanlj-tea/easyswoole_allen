@@ -31,7 +31,7 @@ use Swlib\SaberGM;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
-class Index extends Controller
+class Index extends AbstractController
 {
     public function index()
     {
@@ -133,7 +133,7 @@ class Index extends Controller
     {
         //局部要排除中间件的方法
         $this->middlewareExcept = [
-            Index::class . '\getCsrfToken',
+            //Index::class . '\getCsrfToken',
         ];
         //要继承的中间件
         $this->middleware = [

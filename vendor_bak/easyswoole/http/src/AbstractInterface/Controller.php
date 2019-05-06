@@ -17,7 +17,6 @@ use EasySwoole\Http\Response;
 use EasySwoole\Http\Session\SessionDriver;
 use EasySwoole\Utility\SnowFlake;
 use EasySwoole\Validate\Validate;
-use PhpParser\Node\Stmt\Static_;
 
 abstract class Controller
 {

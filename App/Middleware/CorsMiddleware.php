@@ -11,10 +11,10 @@ namespace App\Middleware;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
 use EasySwoole\Http\Session\SessionDriver;
+use App\HttpController\Index;
 
 class CorsMiddleware extends MiddlewareAbstract
 {
-
     /**
      * CORS中间件
      * @param Request $request
