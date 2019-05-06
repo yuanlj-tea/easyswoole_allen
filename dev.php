@@ -70,7 +70,7 @@ return [
         'POOL_TIME_OUT' => '0.5',
     ],
     'AMQP' => [
-        'host' => '192.168.1.207',
+        'host' => '127.0.0.1',
         'port' => 5672,
         'user' => 'guest',
         'pwd' => 'guest',

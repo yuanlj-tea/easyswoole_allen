@@ -58,7 +58,7 @@ class Job
     public function __construct()
     {
         $this->easyswoole_root = realpath(__DIR__ . '/../../');
-        $this->config = require_once './config.php';
+        $this->config = @require_once $this->easyswoole_root.'/dev.php';
 
         global $argv;
 
@@ -143,7 +143,7 @@ HELP;
     public function registerPool()
     {
         //加载配置文件
-        Config::getInstance()->loadEnv('./config.php');
+        @Config::getInstance()->loadEnv($this->easyswoole_root.'/dev.php');
 
         //注册mysql数据库连接池
         PoolManager::getInstance()

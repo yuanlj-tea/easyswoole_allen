@@ -35,10 +35,6 @@ class MysqlObject extends Mysqli implements PoolObjectInterface
      */
     function beforeUse(): bool
     {
-        echo "beforeuse\n";
-        if(!$this->getMysqlClient()->connected){
-            $this->connect();
-        }
         // 此处可以进行链接是否断线的判断 使用不同的数据库操作类时可以根据自己情况修改
         return $this->getMysqlClient()->connected;
     }
