@@ -78,6 +78,12 @@ abstract class Dispatcher
     protected static $amqpType;
 
     /**
+     * NSQ驱动时的参数,话题
+     * @var
+     */
+    protected static $nsqTopic;
+
+    /**
      * 允许的amqp类型
      * @var
      */
@@ -91,7 +97,7 @@ abstract class Dispatcher
      * 允许设置的队列驱动
      * @var array
      */
-    private $allowDriver = ['redis', 'database', 'amqp'];
+    private $allowDriver = ['redis', 'database', 'amqp', 'nsq'];
 
     /**
      * 获取重试次数
@@ -131,7 +137,7 @@ abstract class Dispatcher
      */
     public function setQueueName(string $queueName)
     {
-        if(static::$queueDriver == $this->amqp){
+        if (static::$queueDriver == $this->amqp) {
             throw new \Exception("amqp不允许设置此参数");
         }
         static::$queueName = $queueName;
@@ -191,6 +197,9 @@ abstract class Dispatcher
      */
     public function setAmqpExchange(string $exchangeName)
     {
+        if (static::$queueDriver != 'amqp') {
+            throw new \Exception("只有amqp类型,才能设置此参数");
+        }
         static::$amqpExchange = $exchangeName;
         return $this;
     }
@@ -201,6 +210,9 @@ abstract class Dispatcher
      */
     public function setAmqpQueue(string $queueName = '')
     {
+        if (static::$queueDriver != 'amqp') {
+            throw new \Exception("只有amqp类型,才能设置此参数");
+        }
         static::$amqpQueue = $queueName;
         return $this;
     }
@@ -211,7 +223,22 @@ abstract class Dispatcher
      */
     public function setAmqpRouteKey(string $routeKey)
     {
+        if (static::$queueDriver != 'amqp') {
+            throw new \Exception("只有amqp类型,才能设置此参数");
+        }
         static::$amqpRoutekey = $routeKey;
+        return $this;
+    }
+
+    /**
+     * 设置NSQ驱动的topic
+     */
+    public function setNsqTopic(string $topic)
+    {
+        if(static::$queueDriver != 'nsq'){
+            throw new \Exception("只有nsq驱动,才能设置此参数");
+        }
+        static::$nsqTopic = $topic;
         return $this;
     }
 
@@ -290,19 +317,31 @@ abstract class Dispatcher
                     });*/
 
                     $amqpConf = Config::getInstance()->getConf('AMQP');
-
-                    if($delay>0){
-                        Timer::getInstance()->after($delay*1000,function() use($amqpExchange,$amqpQueue,$amqpRouteKey,$amqpType,$amqpConf,$queueJson){
+                    if ($delay > 0) {
+                        Timer::getInstance()->after($delay * 1000, function () use ($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf, $queueJson) {
                             $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
                             $publisher->sendMessage($queueJson);
                             $publisher->closeConnetct();
                         });
-                    }else{
+                    } else {
                         $publisher = new Publisher($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf);
                         $publisher->sendMessage($queueJson);
                         $publisher->closeConnetct();
                     }
 
+                    break;
+                case 'nsq':
+                    $config = Config::getInstance()->getConf('NSQ.nsqlookupd');
+                    $topic = static::$nsqTopic;
+                    if ($delay > 0) {
+                        $endpoint = new \NSQClient\Access\Endpoint($config);
+                        $message = (new \NSQClient\Message\Message($queueJson))->deferred(5);
+                        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+                    } else {
+                        $endpoint = new \NSQClient\Access\Endpoint($config);
+                        $message = new \NSQClient\Message\Message($queueJson);
+                        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+                    }
                     break;
                 default:
                     throw new \Exception('不支持的队列驱动：' . $driver);
@@ -310,7 +349,7 @@ abstract class Dispatcher
 
         } catch (\Exception $e) {
             throw new \Exception(
-                sprintf("FILE:%s || LINE:%s || MSG:%s",$e->getFile(),$e->getLine(),$e->getMessage())
+                sprintf("FILE:%s || LINE:%s || MSG:%s", $e->getFile(), $e->getLine(), $e->getMessage())
             );
         }
 

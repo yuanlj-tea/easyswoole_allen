@@ -82,15 +82,15 @@ class EasySwooleEvent implements Event
             // $process->write("向子进程写入数据");
         }
         //amqp消费自定义进程
-        $arg = [
-            'type' => 'direct',
-            'exchange' => 'direct_logs',
-            'queue' => 'queue',
-            'routeKey' => 'test',
-            'class' => TestJob::class //要执行的任务类
-        ];
-        $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
-        $swooleServer->addProcess($amqpConsumeProcess);
+        // $arg = [
+        //     'type' => 'direct',
+        //     'exchange' => 'direct_logs',
+        //     'queue' => 'queue',
+        //     'routeKey' => 'test',
+        //     'class' => TestJob::class //要执行的任务类
+        // ];
+        // $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
+        // $swooleServer->addProcess($amqpConsumeProcess);
 
         //fastCache 数据落地方案
         /*Cache::getInstance()->setTickInterval(5 * 1000);

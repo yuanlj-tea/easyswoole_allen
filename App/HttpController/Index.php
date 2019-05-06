@@ -9,6 +9,7 @@
 namespace App\HttpController;
 
 use App\Container\Container;
+use App\Dispatch\DispatchHandler\AmqpDispatch;
 use App\Dispatch\TestJob;
 use App\Libs\Publisher;
 use App\Middleware\CorsMiddleware;
@@ -236,14 +237,16 @@ class Index extends Controller
         $routeKey = 'test';
         $type = AMQP_EX_TYPE_DIRECT;
 
-        $job = (new TestJob(1, 'bar', ['foo']))
-            ->setQueueDriver('amqp')
-            ->setDelay(5)
-            ->setAmqpType($type)
-            ->setAmqpExchange($exchangeName)
-            ->setAmqpQueue($queueName)
-            ->setAmqpRouteKey($routeKey);
-        $job->dispatch($job);
+        new AmqpDispatch(new TestJob(1,'bar',['foo']),$type,$exchangeName,$queueName,$routeKey);
+
+        // $job = (new TestJob(1, 'bar', ['foo']))
+        //     ->setQueueDriver('amqp')
+        //     ->setDelay(5)
+        //     ->setAmqpType($type)
+        //     ->setAmqpExchange($exchangeName)
+        //     ->setAmqpQueue($queueName)
+        //     ->setAmqpRouteKey($routeKey);
+        // $job->dispatch($job);
         $this->writeJson(200, 'ok');
 
         $request = $this->request();
