@@ -14,10 +14,29 @@ use EasySwoole\Utility\SnowFlake;
 
 abstract class AbstractController extends Controller
 {
+    /**
+     * 继承的中间件
+     * @var array
+     */
     protected $middleware = []; //继承的中间件
-    private $container; //容器对象
-    protected $middlewareExcept = []; //中间件要排除的方法
-    private $csrf_token = 'csrf_token'; //csrf_token
+
+    /**
+     * 容器对象
+     * @var
+     */
+    private $container;
+
+    /**
+     * 局部要排除中间件的方法
+     * @var array
+     */
+    protected $middlewareExcept = [];
+
+    /**
+     * csrf_token名
+     * @var string
+     */
+    private $csrf_token = 'csrf_token';
 
     public function __construct()
     {
@@ -56,9 +75,9 @@ abstract class AbstractController extends Controller
     {
         $session = $this->session();
         $session->start();
-        $csrf_token = $session->get('csrf_token');
+        $csrf_token = $session->get($this->csrf_token);
         //csrf_token已存在则不重复设置
-        empty($csrf_token) && $session->set('csrf_token', SnowFlake::make(16));
+        empty($csrf_token) && $session->set($this->csrf_token, SnowFlake::make(16));
     }
 
 

@@ -10,6 +10,7 @@ namespace App\HttpController;
 
 use App\Container\Container;
 use App\Dispatch\DispatchHandler\AmqpDispatch;
+use App\Dispatch\DispatchHandler\RedisDispatch;
 use App\Dispatch\TestJob;
 use App\Libs\Publisher;
 use App\Middleware\CorsMiddleware;
@@ -210,8 +211,7 @@ class Index extends AbstractController
     public function testRedisQueue()
     {
         //对应consume:php Job.php driver=redis queue=hehe tries=0
-        $job = (new TestJob(1, 'hello', ['hehe']))->setDelay(0 * 1000)->setQueueDriver('redis')->setQueueName("hehe");
-        $job->dispatch($job);
+        new RedisDispatch(new TestJob(1, 'foo', ['bar']), 'hehe');
         $this->writeJson(200, 'ok');
     }
 
@@ -238,7 +238,7 @@ class Index extends AbstractController
         $routeKey = 'test';
         $type = 'direct';
 
-        new AmqpDispatch(new TestJob(1,'bar',['foo']),$type,$exchangeName,$queueName,$routeKey);
+        new AmqpDispatch(new TestJob(1, 'bar', ['foo']), $type, $exchangeName, $queueName, $routeKey);
         $this->writeJson(200, 'ok');
     }
 
@@ -264,5 +264,48 @@ class Index extends AbstractController
         // $message = \NSQClient\Message\Bag::generate(['msg data 1', 'msg data 2']);
         // $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
         // var_dump($result);
+    }
+
+    private $inventoryQueue = 'inventory_queue'; //库存队列
+    private $purchaseQueue = 'purchase_queue'; //抢购队列
+
+    public function order()
+    {
+        $request = $this->request();
+        $buyNum = (int)$request->getRequestParam('num');
+        if ($buyNum <= 0) {
+            return $this->writeJson(500, '购买数量必须大于0');
+        }
+        $succ = $fail = 0;
+        RedisPool::invoke(function (RedisObject $redis) use ($buyNum, $succ, $fail) {
+            for ($i = 0; $i < $buyNum; $i++) {
+                // if($redis->rPop($this->inventoryQueue)){
+                //     $succ++;
+                //     $redis->rPush($this->purchaseQueue,1);
+                // }else{
+                //     $fail++;
+                // }
+                if ($redis->rpoplpush($this->inventoryQueue, $this->purchaseQueue)) {
+                    $succ++;
+                } else {
+                    $fail++;
+                }
+            }
+            return $this->writeJson(200, ['succ' => $succ, 'fail' => $fail]);
+        });
+    }
+
+    /**
+     * 生成库存队列
+     */
+    public function enQueue()
+    {
+        RedisPool::invoke(function (RedisObject $redis) {
+            $redis->del($this->inventoryQueue);
+            for ($i = 0; $i < 100; $i++) {
+                $redis->lPush($this->inventoryQueue, 1);
+            }
+        });
+        return $this->writeJson(200, "库存队列生成成功");
     }
 }
