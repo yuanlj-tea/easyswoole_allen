@@ -238,7 +238,7 @@ abstract class Dispatcher
      */
     public function setNsqTopic(string $topic)
     {
-        if(static::$queueDriver != 'nsq'){
+        if (static::$queueDriver != 'nsq') {
             throw new \Exception("只有nsq驱动,才能设置此参数");
         }
         static::$nsqTopic = $topic;
@@ -334,16 +334,29 @@ abstract class Dispatcher
 
                     break;
                 case 'nsq':
-                    $config = Config::getInstance()->getConf('NSQ.nsqlookupd');
                     $topic = static::$nsqTopic;
-                    if ($delay > 0) {
-                        $endpoint = new \NSQClient\Access\Endpoint($config);
-                        $message = (new \NSQClient\Message\Message($queueJson))->deferred(5);
-                        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
-                    } else {
-                        $endpoint = new \NSQClient\Access\Endpoint($config);
-                        $message = new \NSQClient\Message\Message($queueJson);
-                        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+                    try {
+                        $config = Config::getInstance()->getConf('NSQ.nsqlookupd');
+                        if ($delay > 0) {
+                            $endpoint = new \NSQClient\Access\Endpoint($config);
+                            $message = (new \NSQClient\Message\Message($queueJson))->deferred(5);
+                            $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+                            var_dump($result);
+                        } else {
+                            $endpoint = new \NSQClient\Access\Endpoint($config);
+                            $message = new \NSQClient\Message\Message($queueData);
+                            $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+                            var_dump($result);
+                        }
+                    } catch (\NSQClient\Exception\LookupTopicException $e) {
+                        $nsqdAddr = Config::getInstance()->getConf('NSQ.nsqd');
+                        $nsq = new \Nsq();
+                        $isTrue = $nsq->connectNsqd($nsqdAddr);
+                        var_dump($isTrue);
+                        $nsq->publish($topic, $queueJson);
+                        $nsq->closeNsqdConnection();
+                    } catch (\Exception $e) {
+                        var_dump($e);
                     }
                     break;
                 default:

@@ -55,10 +55,16 @@ class Job
         AMQP_EX_TYPE_TOPIC,
     ];
 
+    /**
+     * di容器对象
+     * @var
+     */
+    private $DI;
+
     public function __construct()
     {
         $this->easyswoole_root = realpath(__DIR__ . '/../../');
-        $this->config = @require_once $this->easyswoole_root.'/dev.php';
+        $this->config = @require_once $this->easyswoole_root . '/dev.php';
 
         global $argv;
 
@@ -79,7 +85,7 @@ class Job
         //解析参数
         array_shift($argv);
         $argv = $this->parsingArgv($argv);
-        if (!isset($argv['class']) && !isset($argv['driver']) && !isset($argv['queue'])) {
+        if (!isset($argv['driver'])) {
             echo "缺少参数或参数错误\n";
             $this->showHelp();
         }
@@ -90,21 +96,32 @@ class Job
             $this->runClass();
             return;
         }
-
+        $this->DI = Container::getInstance();
         //方式2
-        if (isset($argv['driver']) && isset($argv['queue'])) {
+        if (isset($argv['driver']) && (isset($argv['queue']) || isset($argv['topic']))) {
             $tries = isset($argv['tries']) ? $argv['tries'] : 3;
-            if ($argv['driver'] == 'amqp') {
-                if (!isset($argv['exchange']) || !isset($argv['queue']) || !isset($argv['route_key']) || !isset($argv['type'])) {
-                    throw new \Exception("amqp || 缺少参数");
-
-                    if (!in_array($argv['type'], $this->allowAmqpType)) {
-                        throw new \Exception("amqp || 无效的类型");
+            switch ($argv['driver']) {
+                case 'amqp':
+                    if (!isset($argv['exchange']) || !isset($argv['queue']) || !isset($argv['route_key']) || !isset($argv['type'])) {
+                        throw new \Exception("amqp || 缺少参数");
+                        if (!in_array($argv['type'], $this->allowAmqpType)) {
+                            throw new \Exception("amqp || 无效的类型");
+                        }
                     }
-                }
-                $this->runAmqp($argv['type'], $argv['exchange'], $argv['queue'], $argv['route_key'], $tries);
-            } else {
-                $this->runQueue($argv['driver'], $argv['queue'], $tries);
+                    $this->runAmqp($argv['type'], $argv['exchange'], $argv['queue'], $argv['route_key'], $tries);
+                    break;
+                case 'nsq':
+                    if (!isset($argv['topic']) || !isset($argv['channel'])) {
+                        throw new \Exception("nsq || 缺少参数");
+                    }
+                    $this->runNsq($argv['topic'], $argv['channel'], $tries);
+                    break;
+                default:
+                    if (!isset($argv['driver']) || !isset($argv['queue'])) {
+                        throw new \Exception("缺少参数");
+                    }
+                    $this->runQueue($argv['driver'], $argv['queue'], $tries);
+                    break;
             }
         } else {
             echo "缺少参数\n";
@@ -143,7 +160,7 @@ HELP;
     public function registerPool()
     {
         //加载配置文件
-        @Config::getInstance()->loadEnv($this->easyswoole_root.'/dev.php');
+        @Config::getInstance()->loadEnv($this->easyswoole_root . '/dev.php');
 
         //注册mysql数据库连接池
         PoolManager::getInstance()
@@ -197,6 +214,46 @@ HELP;
             $consumer = new AmqpJob($type, $exchangeName, $queueName, $routeKey, $tries);
             $consumer->dealMq(true);
             $consumer->closeConnetct();
+        });
+    }
+
+    public function runNsq($topic, $channel, $tries)
+    {
+        go(function () use ($topic, $channel, $tries) {
+            $conf = Config::getInstance()->getConf('NSQ.nsqlookupd');
+            $nsq_lookupd = new NsqLookupd($conf); //the nsqlookupd http addr
+            $nsq = new Nsq();
+            $config = array(
+                "topic" => $topic,
+                "channel" => $channel,
+                "rdy" => 2,                //optional , default 1
+                "connect_num" => 1,        //optional , default 1
+                "retry_delay_time" => 5000,  //optional, default 0 , if run callback failed, after 5000 msec, message will be retried
+                "auto_finish" => true, //default true
+            );
+            $nsq->subscribe($nsq_lookupd, $config, function ($msg, $bev) {
+                $queueData = json_decode($msg->payload, true);
+                if (empty($queueData) || !is_array($queueData)) {
+                    return;
+                }
+                $className = $queueData['class_name'];
+                $param = $queueData['param'];
+                $obj = $this->DI->get($className, $param);
+                $tries = isset($tries) ? $tries : $obj->getTries();
+
+                if ($tries > 0) {
+                    for ($i = 0; $i < $tries; $i++) {
+                        try {
+                            $obj->run();
+                            break;
+                        } catch (\Exception $e) {
+                            echo "执行:{$i}次失败 || 失败原因 || {$e->getMessage()}\n";
+                        }
+                    }
+                } else {
+                    $obj->run();
+                }
+            });
         });
     }
 

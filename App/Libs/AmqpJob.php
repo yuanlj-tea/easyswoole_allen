@@ -30,7 +30,6 @@ class AmqpJob extends Amqp
             if (empty($queueData) || !is_array($queueData)) {
                 return;
             }
-
             $className = $queueData['class_name'];
             $param = $queueData['param'];
             // $delay = $queueData['delay'];

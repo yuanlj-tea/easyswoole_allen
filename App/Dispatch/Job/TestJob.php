@@ -6,8 +6,9 @@
  * Time: 11:21
  */
 
-namespace App\Dispatch;
+namespace App\Dispatch\Job;
 
+use App\Dispatch\Dispatcher;
 use App\Utility\Pool\MysqlObject;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisPool;
@@ -52,8 +53,8 @@ class TestJob extends Dispatcher
         // echo "sleep结束\n";
 
         MysqlPool::invoke(function (MysqlObject $db) {
-            $res = $db->where('id', 1, '=')->get('tp_article', null, '*');
-            // $res = $db->where('id', 1, '=')->get('test', null, '*');
+            // $res = $db->where('id', 1, '=')->get('tp_article', null, '*');
+            $res = $db->where('id', 1, '=')->get('test', null, '*');
             pp($res);
         });
 

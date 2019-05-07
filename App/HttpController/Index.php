@@ -10,8 +10,10 @@ namespace App\HttpController;
 
 use App\Container\Container;
 use App\Dispatch\DispatchHandler\AmqpDispatch;
+use App\Dispatch\DispatchHandler\MysqlDispatch;
+use App\Dispatch\DispatchHandler\NsqDispatch;
 use App\Dispatch\DispatchHandler\RedisDispatch;
-use App\Dispatch\TestJob;
+use App\Dispatch\Job\TestJob;
 use App\Libs\Publisher;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
@@ -208,10 +210,17 @@ class Index extends AbstractController
 
     }
 
+    public function testMysqlQueue()
+    {
+        //对应consume:php Job.php driver=database queue=queue tries=0
+        new MysqlDispatch(new TestJob(1,'foo',['bar']),'queue');
+        $this->writeJson(200, 'ok');
+    }
+
     public function testRedisQueue()
     {
-        //对应consume:php Job.php driver=redis queue=hehe tries=0
-        new RedisDispatch(new TestJob(1, 'foo', ['bar']), 'hehe');
+        //对应consume:php Job.php driver=redis queue=queue tries=0
+        new RedisDispatch(new TestJob(1, 'foo', ['bar']), 'queue');
         $this->writeJson(200, 'ok');
     }
 
@@ -244,12 +253,15 @@ class Index extends AbstractController
 
     public function testNsq()
     {
+        $topic = 'test2';
+        new NsqDispatch(new TestJob(1,'foo',['bar']),$topic);
+        $this->writeJson(200, 'ok');
         //及时发布
-        $topic = 'test';
-        $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
-        $message = new \NSQClient\Message\Message('hello world');
-        $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
-        var_dump($result);
+        // $topic = 'test';
+        // $endpoint = new \NSQClient\Access\Endpoint('http://127.0.0.1:4161');
+        // $message = new \NSQClient\Message\Message('hello world');
+        // $result = \NSQClient\Queue::publish($endpoint, $topic, $message);
+        // var_dump($result);
 
         //延时发布
         // $topic = 'test';
