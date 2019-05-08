@@ -50,11 +50,11 @@ abstract class AbstractController extends Controller
         //设置csrf_token
         $this->setCsrfToken();
 
-        //调用中间件，全局排除的方法不验证
+        //调用中间件,局部要排除中间件的方法不验证
         if (!empty($this->middleware) && !in_array(Static::class . '\\' . $action, $this->middlewareExcept)) {
             foreach ($this->middleware as $pipe) {
                 $ins = $this->container->get($pipe);
-                //中间件局部排除的方法，不验证
+                //中间件全局排除的方法,不验证
                 if (in_array(Static::class . '\\' . $action, $ins->getExcept())) {
                     continue;
                 }
