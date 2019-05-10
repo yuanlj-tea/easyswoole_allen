@@ -253,6 +253,7 @@ class Index extends AbstractController
 
     public function testNsq()
     {
+        //对应consume:php Job.php driver=nsq topic=test2 channel=my_channel tries=0
         $topic = 'test2';
         new NsqDispatch(new TestJob(1,'foo',['bar']),$topic);
         $this->writeJson(200, 'ok');

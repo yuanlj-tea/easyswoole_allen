@@ -1,20 +1,6 @@
 #### 1、介绍
 
-支持三种队列驱动：database、redis、rabbitmq；
-
-支持重试机制；
-
-database、redis支持延时执行任务；
-
-生产任务时，在协程mysql/redis连接池里生产，完全无阻塞；
-
-引入DI container，反射执行任务逻辑；
-
-database、redis消费任务是协程里消费，任务里有io阻塞时，队列消费完全非阻塞；
-
-database驱动在任务失败时，会入failed_jobs表；
-
-redis驱动在任务失败时，用channel做协程间通讯入失败队列，基于pop会阻塞检测任务是否失败导致会阻塞消费，暂时去掉了入失败队列；
+支持队列驱动：database、redis、rabbitmq、nsq；
 
 #### 2、显示帮助提示：
 
@@ -32,27 +18,57 @@ php Job.php gen_database
 会自动生成jobs、failed_jobs表，如果之前数据库里已经有这两张表，会被覆盖；
 ```
 
-#### 4、支持两种消费方式：
+#### 4、生产消费：
 
-- 基于DispatchProvider中配置的key消费，驱动、队列名不能自己配置，只能用任务类里配置的驱动、队列名；
+> 生产者类都在App/Dispatch/DispatchHandler目录下
 
-  这种方式需要在DispatchProvider类的provider属性中配置key=>任务类的映射关系；
+##### 4.1、mysql驱动
 
-  ```shell
-  php Job.php class=test_job
-  
-  注意:这种方式，只会使用任务类里配置的驱动、重试次数、队列名，生产任务时指定的参数无效。建议使用下面的方式
-  ```
+```
+生产：
+new MysqlDispatch(new TestJob(1,'foo',['bar']),'queue');
+消费：
+cd App/Dispatch && php Job.php driver=database queue=queue tries=0
+```
 
-- 消费时指定驱动、队列名、重试次数
+##### 4.2、redis驱动
 
-- ```shell
-  php Job.php driver=redis/database(驱动名) queue=queue_name(队列名) tries=0(失败重试次数)
-  ```
+```
+生产：
+new RedisDispatch(new TestJob(1, 'foo', ['bar']), 'queue');
+消费：
+cd App/Dispatch && php Job.php driver=redis queue=queue tries=0
+```
+
+##### 4.3、rabbitmq驱动
+
+```
+生产：
+$exchangeName = 'direct_logs';
+$queueName = 'queue';
+$routeKey = 'test';
+$type = 'direct';
+
+new AmqpDispatch(new TestJob(1, 'bar', ['foo']), $type, $exchangeName, $queueName, $routeKey);
+消费：
+php Job.php driver=amqp type=direct exchange=direct_logs queue=queue route_key=test tries=0
+```
+
+##### 4.3、nsq驱动
+
+```
+生产：
+$topic = 'test2';
+new NsqDispatch(new TestJob(1,'foo',['bar']),$topic);
+消费：
+php Job.php driver=nsq topic=test2 channel=my_channel tries=0
+```
+
+
 
 #### 5、说明：
 
-任务类要继承Dispatcher抽象类，实现run方法，要执行的任务逻辑写在run方法里；
+任务类要继承\App\Dispatch\Dispatcher抽象类，实现run方法，要执行的任务逻辑写在run方法里；
 
 - 默认重试次数:3次
 
@@ -78,65 +94,10 @@ php Job.php gen_database
   protected static $queueName = 'test_queue_name';
   ```
 
-- 生产任务时可以设定延时消费、指定生产队列驱动、指定队列名：(优先级高于上面默认的)
-
-  ```php
-  $job = (new \App\Dispatch\TestJob(1,'foo',['foo','bar']))
-    //延时5秒消费任务
-    ->setDelay(5*1000)
-    //设置队列驱动为database
-    ->setQueueDriver('database')
-    //设置队列名为test_queue_name
-    ->setQueueName('test_queue_name');
-  
-  $job->dispatch($job);
-  ```
-
-  setDelay : 设置延时时间，单位毫秒；有延迟不支持重试；
-
-  setQueueDriver : 设置队列驱动
-
-  setQueueName : 设置队列名
-
-- amqp驱动生产、消费说明：
-
-  ```php
-  #生产&消费
-  //topic 主题订阅
-  //对应consume:php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
-  // $exchangeName = 'topic_logs';
-  // $queueName = '';
-  // $routeKey = 'php.laravel';
-  // $type = AMQP_EX_TYPE_TOPIC;
-  
-  //fanout pub/sub
-  //对应consume:php Job.php driver=amqp type=fanout exchange=logs queue= route_key=test tries=0
-  // $exchangeName = 'logs';
-  // $queueName = '';
-  // $routeKey = 'test';
-  // $type = AMQP_EX_TYPE_FANOUT;
-  
-  //direct 一对一,一对多
-  //对应consume:php Job.php driver=amqp type=direct exchange=direct_logs queue=queue route_key=test tries=0
-  $exchangeName = 'direct_logs';
-  $queueName = 'queue';
-  $routeKey = 'test';
-  $type = AMQP_EX_TYPE_DIRECT;
-  
-  $job = (new TestJob(1, 'hello', ['foo']))
-      ->setQueueDriver('amqp')
-      ->setAmqpType($type)
-      ->setAmqpExchange($exchangeName)
-      ->setAmqpQueue($queueName)
-      ->setAmqpRouteKey($routeKey);
-  $job->dispatch($job);
-  ```
-
-  
 
 #### 6、配置文件：
 
-在config.php中设置redis、mysql、amqp连接配置：
+在dev.php中设置redis、mysql、amqp、nsq连接配置：
 
 ```php
 return [
@@ -171,6 +132,13 @@ return [
         'POOL_MIN_NUM' => '5',
         'POOL_TIME_OUT' => '0.5',
     ],
+    'NSQ' => [
+        'nsqd' => [
+            "127.0.0.1:4150",
+            "127.0.0.1:4151",
+        ],
+        'nsqlookupd' => '127.0.0.1:4161'
+    ]
 ];
 ```
 

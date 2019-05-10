@@ -137,18 +137,12 @@ class Job
     public function showHelp()
     {
         $helpCode = <<<HELP
-1、支持三种队列驱动：redis、database、amqp
+1、支持队列驱动：redis、database、amqp、nsq
 
 2、database驱动需要生成数据表：php Job.php gen_database
-
-3、支持三种消费方式：
-
-    1、php Job.php class=test_job(DispatchProvider中配置的key)
     
-    2、php Job.php driver=redis(驱动名) queue=default_queue_name(队列名) tries=0(失败重试次数)
-    
-    3、(amqp)php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
-    
+3、具体使用参见readme:
+    https://github.com/a1554610616/easyswoole_allen/blob/master/App/Dispatch/readme.md    
 HELP;
         die($helpCode . "\n");
 
