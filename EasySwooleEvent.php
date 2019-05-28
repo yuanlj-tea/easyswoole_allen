@@ -16,15 +16,16 @@ use App\Process\Job\TestJob;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\RedisPool;
+use App\WebSocket\WebSocketEvent;
+use App\WebSocket\WebSocketParser;
 use EasySwoole\Component\Di;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
-use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
+use EasySwoole\Socket\Dispatcher;
 use EasySwoole\Utility\File;
-use EasySwoole\FastCache\CacheProcess;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
@@ -73,13 +74,11 @@ class EasySwooleEvent implements Event
         $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
         $isDev = Core::getInstance()->isDev();
 
-        if ($isDev) {
+        // if ($isDev) {
             //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
             $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
-            $GLOBALS['hot_reload_process'] = $process;
             $swooleServer->addProcess($process);
-            // $process->write("向子进程写入数据");
-        }
+        // }
         //amqp消费自定义进程
         // $arg = [
         //     'type' => 'direct',
@@ -91,32 +90,19 @@ class EasySwooleEvent implements Event
         // $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
         // $swooleServer->addProcess($amqpConsumeProcess);
 
-        //fastCache 数据落地方案
-        /*Cache::getInstance()->setTickInterval(5 * 1000);
-        Cache::getInstance()->setOnTick(function (CacheProcess $cacheProcess) {
-            $data = [
-                'data'  => $cacheProcess->getSplArray(),
-                'queue' => $cacheProcess->getQueueArray()
-            ];
-            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
-            File::createFile($path, serialize($data));
-        });
-        Cache::getInstance()->setOnStart(function (CacheProcess $cacheProcess) {
-            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
-            if (is_file($path)) {
-                $data = unserialize(file_get_contents($path));
-                $cacheProcess->setQueueArray($data['queue']);
-                $cacheProcess->setSplArray($data['data']);
-            }
-        });
-        Cache::getInstance()->setOnShutdown(function (CacheProcess $cacheProcess) {
-            $data = [
-                'data'  => $cacheProcess->getSplArray(),
-                'queue' => $cacheProcess->getQueueArray()
-            ];
-            $path = Config::getInstance()->getConf('TEMP_DIR') . '/' . $cacheProcess->getProcessName();
-            File::createFile($path, serialize($data));
-        });*/
+        //websocket添加
+        $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
+        if($serverType == EASYSWOOLE_WEB_SOCKET_SERVER){
+            $config = new \EasySwoole\Socket\Config();
+            $config->setType($config::WEB_SOCKET);
+            $config->setParser(new WebSocketParser());
+            $dispatch = new Dispatcher($config);
+            $register->set(EventRegister::onOpen,array(WebSocketEvent::class,'onOpen'));
+            $register->set(EventRegister::onMessage,function(\swoole_websocket_server $server,\swoole_websocket_frame $frame)use($dispatch){
+                $dispatch->dispatch($server,$frame->data,$frame);
+            });
+            $register->set(EventRegister::onClose,array(WebSocketEvent::class,'onClose'));
+        }
     }
 
     public static function onRequest(Request $request, Response $response): bool
