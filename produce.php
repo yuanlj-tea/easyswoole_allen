@@ -27,21 +27,21 @@ return [
     ],
     'TEMP_DIR' => null,
     'LOG_DIR' => null,
-    'CONSOLE' => [
-        'ENABLE' => true,
-        'LISTEN_ADDRESS' => '127.0.0.1',
-        'HOST' => '127.0.0.1',
-        'PORT' => 9500,
-        'EXPIRE' => '120',
-        'PUSH_LOG' => true,
+    'CONSOLE' => [//console组件配置,完整配置可查看:http://easyswoole.com/Manual/3.x/Cn/_book/SystemComponent/Console/Introduction.html
+        'ENABLE' => true,//是否开启console
+        'LISTEN_ADDRESS' => '127.0.0.1',//console服务端监听地址
+        'HOST' => '127.0.0.1',//console客户端连接远程地址
+        'PORT' => 9500,//console服务端监听端口,客户端连接远程端口
+        'EXPIRE' => '120',//心跳超时时间
+        // 'AUTH'           => null,//鉴权密码,如不需要鉴权可设置null
         'AUTH' => [
             [
-                'USER'=>'root',
-                'PASSWORD'=>'123456',
-                'MODULES'=>[
-                    'auth','server','help'
+                'USER' => 'root',
+                'PASSWORD' => 'root',
+                'MODULES' => [
+                    'auth', 'server', 'help', 'test'
                 ],
-                'PUSH_LOG' => true,
+                'PUSH_LOG' => true
             ]
         ]
     ],
@@ -53,25 +53,30 @@ return [
 
     //mysql config
     'MYSQL' => [
-        'host'          => '127.0.0.1',
-        'port'          => '3306',
-        'user'          => 'root',
-        'timeout'       => '5',
-        'charset'       => 'utf8mb4',
-        'password'      => '123456',
-        'database'      => 'test',
-        'POOL_MAX_NUM'  => '20',
-        'POOL_MIN_NUM'  => '5',
+        'host' => '127.0.0.1',
+        'port' => '3306',
+        'user' => 'root',
+        'timeout' => '5',
+        'charset' => 'utf8mb4',
+        'password' => '123456',
+        'database' => 'test',
+        'POOL_MAX_NUM' => '20',
+        'POOL_MIN_NUM' => '5',
         'POOL_TIME_OUT' => '0.5',
     ],
     //redis config
     'REDIS' => [
-        'host'          => '127.0.0.1',
-        'port'          => '6379',
-        'auth'          => '123456',
-        'POOL_MAX_NUM'  => '20',
-        'POOL_MIN_NUM'  => '5',
+        'host' => '127.0.0.1',
+        'port' => '6379',
+        'auth' => '123456',
+        'POOL_MAX_NUM' => '20',
+        'POOL_MIN_NUM' => '5',
         'POOL_TIME_OUT' => '0.5',
+        //连接池配置需要根据注册时返回的poolconfig进行配置,只在这里配置无效
+        'intervalCheckTime'    => 30 * 1000,//定时验证对象是否可用以及保持最小连接的间隔时间
+        'maxIdleTime'          => 15,//最大存活时间,超出则会每$intervalCheckTime/1000秒被释放
+        'maxObjectNum'         => 20,//最大创建数量
+        'minObjectNum'         => 5,//最小创建数量 最小创建数量不能大于等于最大创建
     ],
     'AMQP' => [
         'host' => '127.0.0.1',
@@ -79,8 +84,8 @@ return [
         'user' => 'guest',
         'pwd' => 'guest',
         'vhost' => '/',
-        'POOL_MAX_NUM'  => '20',
-        'POOL_MIN_NUM'  => '5',
+        'POOL_MAX_NUM' => '20',
+        'POOL_MIN_NUM' => '5',
         'POOL_TIME_OUT' => '0.5',
     ],
     'NSQ' => [
@@ -89,5 +94,16 @@ return [
             "127.0.0.1:4151",
         ],
         'nsqlookupd' => '127.0.0.1:4161'
-    ]
+    ],
+    //聊天室房间信息
+    'rooms' => [
+        '1' => '1',
+        '2' => '2',
+        '3' => '3',
+        '4' => '4',
+        '5' => '5',
+        '6' => '6',
+    ],
+    //聊天室的前端域名
+    'CLIENT_DOMAIN' => '192.168.79.206:8083'
 ];

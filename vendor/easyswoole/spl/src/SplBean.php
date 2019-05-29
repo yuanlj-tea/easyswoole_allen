@@ -40,9 +40,10 @@ class SplBean implements \JsonSerializable
         foreach ($this as $key => $item){
             array_push($data,$key);
         }
+        $data = array_flip($data);
         unset($data['_keyMap']);
         unset($data['_classMap']);
-        return $data;
+        return array_flip($data);
     }
 
     function toArray(array $columns = null,$filter = null):array
@@ -106,15 +107,6 @@ class SplBean implements \JsonSerializable
 
     final private function arrayToBean(array $data,$autoCreateProperty = false):SplBean
     {
-        //先做keyMap转化
-        if(!empty($this->_keyMap)){
-            foreach ($this->_keyMap as $beanKey => $dataKey) {
-                if(array_key_exists($dataKey,$data)){
-                    $data[$beanKey] = $data[$dataKey];
-                    unset($data[$dataKey]);
-                }
-            }
-        }
         if($autoCreateProperty == false){
             $data = array_intersect_key($data,array_flip($this->allProperty()));
         }
@@ -181,12 +173,26 @@ class SplBean implements \JsonSerializable
     /*
      * 恢复到属性定义的默认值
      */
-    public function restore(array $data = [])
+    public function restore(array $data = [], $autoCreateProperty = false)
     {
-        $this->arrayToBean($data+get_class_vars(static::class));
+        $this->clear();
+        $this->arrayToBean($data+get_class_vars(static::class), $autoCreateProperty);
         $this->initialize();
         $this->classMap();
         return $this;
+    }
+
+    private function clear() {
+        $keys = $this->allProperty();
+        $ref = new \ReflectionClass(static::class);
+        $fields = array_keys($ref->getDefaultProperties());
+        $fields = array_merge($fields, array_values($this->_keyMap));
+        // 多余的key
+        $extra = array_diff($keys, $fields);
+
+        foreach ($extra as $key => $value) {
+            unset($this->$value);
+        }
     }
 
     private function classMap()

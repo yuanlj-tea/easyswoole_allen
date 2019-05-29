@@ -16,12 +16,26 @@ class WebSocketParser implements ParserInterface
 {
     public function decode($raw, $client): ?Caller
     {
-        // TODO: Implement decode() method.
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            pp("decode msg error!\n");
+            return null;
+        }
+        $caller = new Caller();
+        //默认调用App\WebSocket\Index控制的index方法
+        $class = '\\App\\WebSocket\\' . ucfirst(isset($data['class']) && !empty($data['class']) ? $data['class'] : 'Index');
+        $caller->setControllerClass($class);
+
+        $action = isset($data['action']) && !empty($data['action']) ? $data['action'] : 'index';
+        $caller->setAction($action);
+        $param = isset($data['param']) && is_array($data['param']) ? $data['param'] : [];
+        $caller->setArgs($param);
+        return $caller;
     }
 
     public function encode(Response $response, $client): ?string
     {
-        // TODO: Implement encode() method.
+        return $response->getMessage();
     }
 
 }

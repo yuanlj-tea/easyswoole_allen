@@ -2,14 +2,18 @@ $(document).ready(function () {
     // Run the init method on document ready:
     face.init();
     chat.init();
-    setInterval('heartbeat()',50000);
+    setInterval('heartbeat()', 50000);
 });
 
 //发送心跳包
-function heartbeat(){
+function heartbeat() {
     var json = {
-        "type": 'heartbeat',
-        "txt": 'heartbeat',    
+        "class": "Index",
+        "action": "index",
+        "param": {
+            "type": 'heartbeat',
+            "txt": 'heartbeat',
+        }
     };
     chat.wsSend(JSON.stringify(json));
 }
@@ -34,7 +38,7 @@ var chat = {
         this.off();
         chat.data.storage = window.localStorage;
         this.ws();
-        
+
     },
     doLogin: function (name, email) {
         if (name == '' || email == '') {
@@ -53,10 +57,14 @@ var chat = {
             return false;
         }
         //登录操作
-        chat.data.type = 1; //登录标志
+        chat.data.type = "login"; //登录标志
         chat.data.email = email; //邮箱
         chat.data.login = true;
-        var json = {"type": chat.data.type, "name": name, "email": email, 'roomid': '1'};
+        var json = {
+            "class": "Index",
+            "action": "index",
+            "type": chat.data.type, "name": name, "email": email, 'roomid': '1'
+        };
         chat.wsSend(JSON.stringify(json));
         return false;
 
@@ -204,19 +212,19 @@ var chat = {
         this.data.wSock.onclose = function (event) {
             layer.open({
                 content: '已断开连接',
-                success: function(layero, index){
-                  console.log(layero, index);
+                success: function (layero, index) {
+                    console.log(layero, index);
                 }
             });
         }
     },
     wsOnerror: function () {
         this.data.wSock.onerror = function (event) {
-            
+
             layer.open({
                 content: '服务器已关闭',
-                success: function(layero, index){
-                  console.log(layero, index);
+                success: function (layero, index) {
+                    console.log(layero, index);
                 }
             });
         }
@@ -429,7 +437,7 @@ var chat = {
         console.log(obj);
         console.log('----' + flag + ' end-------');
     },
-    
+
 
 }
 

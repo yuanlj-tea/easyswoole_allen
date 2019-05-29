@@ -159,7 +159,7 @@ abstract class Controller
         return json_decode($this->request()->getBody()->__toString(), true);
     }
 
-    protected function xml($options = LIBXML_NOERROR, string $className = 'SimpleXMLElement')
+    protected function xml($options = LIBXML_NOERROR | LIBXML_NOCDATA, string $className = 'SimpleXMLElement')
     {
         //禁止引用外部xml实体
         libxml_disable_entity_loader(true);

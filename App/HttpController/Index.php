@@ -38,6 +38,8 @@ class Index extends AbstractController
 {
     public function index()
     {
+        $ips = swoole_get_local_ip();
+        pp($ips);
         $this->writeJson(200, 'ok');
         /*RedisPool::invoke(function (RedisObject $redis){
             $key = 'user:1:api_count';

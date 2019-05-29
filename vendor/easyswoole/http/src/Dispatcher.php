@@ -77,7 +77,7 @@ class Dispatcher
         $path = UrlParser::pathInfo($request->getUri()->getPath());
         if($this->router instanceof GroupCountBased){
             $handler = null;
-            $routeInfo = $this->router->dispatch($request->getMethod(),$path);
+            $routeInfo = $this->router->dispatch($request->getMethod(),$request->getUri()->getPath());
             if($routeInfo !== false){
                 switch ($routeInfo[0]) {
                     case \FastRoute\Dispatcher::NOT_FOUND:{

@@ -15,6 +15,7 @@ use App\Process\HotReload;
 use App\Process\Job\TestJob;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
+use App\Utility\Pool\Predis\PredisPool;
 use App\Utility\Pool\RedisPool;
 use App\WebSocket\WebSocketEvent;
 use App\WebSocket\WebSocketParser;
@@ -55,11 +56,17 @@ class EasySwooleEvent implements Event
             ->register(AmqpPool::class, $conf->getConf('AMQP.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('AMQP.POOL_MIN_NUM'));
 
-
+        //注册Predis连接池
+        PoolManager::getInstance()
+            ->register(PredisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
+            ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
     }
 
     public static function mainServerCreate(EventRegister $register)
     {
+        $conf = Config::getInstance();//获取配置文件
+        $clientDomain = $conf->getConf('CLIENT_DOMAIN');
+        !defined('DOMAIN') && define('DOMAIN', '');
         //注册onWorkerStart回调事件
         $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) {
             //在每个worker进程启动的时候，预创建redis连接池
@@ -70,15 +77,15 @@ class EasySwooleEvent implements Event
             // echo "worker:{$workerId} start\n";
         });
 
-        $conf = Config::getInstance();//获取配置文件
         $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
         $isDev = Core::getInstance()->isDev();
 
         // if ($isDev) {
-            //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
-            $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
-            $swooleServer->addProcess($process);
+        //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
+        $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
+        $swooleServer->addProcess($process);
         // }
+
         //amqp消费自定义进程
         // $arg = [
         //     'type' => 'direct',
@@ -90,18 +97,19 @@ class EasySwooleEvent implements Event
         // $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
         // $swooleServer->addProcess($amqpConsumeProcess);
 
-        //websocket添加
+        //websocket控制器
         $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
-        if($serverType == EASYSWOOLE_WEB_SOCKET_SERVER){
+        if ($serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
             $config = new \EasySwoole\Socket\Config();
             $config->setType($config::WEB_SOCKET);
             $config->setParser(new WebSocketParser());
+
             $dispatch = new Dispatcher($config);
-            $register->set(EventRegister::onOpen,array(WebSocketEvent::class,'onOpen'));
-            $register->set(EventRegister::onMessage,function(\swoole_websocket_server $server,\swoole_websocket_frame $frame)use($dispatch){
-                $dispatch->dispatch($server,$frame->data,$frame);
+            $register->set(EventRegister::onOpen, [WebSocketEvent::class, 'onOpen']);
+            $register->set(EventRegister::onMessage, function (\swoole_websocket_server $server, \swoole_websocket_frame $frame) use ($dispatch) {
+                $dispatch->dispatch($server, $frame->data, $frame);
             });
-            $register->set(EventRegister::onClose,array(WebSocketEvent::class,'onClose'));
+            $register->set(EventRegister::onClose, [WebSocketEvent::class, 'onClose']);
         }
     }
 

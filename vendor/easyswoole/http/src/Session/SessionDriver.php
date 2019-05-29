@@ -8,10 +8,9 @@
 
 namespace EasySwoole\Http\Session;
 
-
-use EasySwoole\Http\AbstractInterface\SessionDriverInterface;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
+use EasySwoole\Http\AbstractInterface\SessionDriverInterface;
 
 class SessionDriver implements SessionDriverInterface
 {
@@ -23,56 +22,62 @@ class SessionDriver implements SessionDriverInterface
     private $sessionName = 'EasySwoole';
     private $savePath;
     private $data = [];
+    private $expire = null;
+    private $path = '/';
+    private $domain = '';
+    private $secure = false;
+    private $httpOnly = false;
 
-    function __construct(Request $request,Response $response,\SessionHandlerInterface $sessionHandler = null)
+    function __construct(Request $request, Response $response, \SessionHandlerInterface $sessionHandler = null)
     {
         $this->request = $request;
         $this->response = $response;
-        if($sessionHandler){
+        if ($sessionHandler) {
             $this->handler = $sessionHandler;
-        }else{
+        } else {
             $this->handler = new SessionHandler();
         }
     }
 
-    function savePath(string $path = null):?string
+    function savePath(string $path = null): ?string
     {
-        if($path){
-            if(!$this->isStart){
-                $this->savePath = rtrim($path,'/');
+        if ($path) {
+            if (!$this->isStart) {
+                $this->savePath = rtrim($path, '/');
                 return $this->savePath;
-            }else{
+            } else {
                 return null;
             }
-        }else{
+        } else {
             return $this->savePath;
         }
     }
 
-    function sid(string $sid = null):?string
+    function sid(?string $sid = null): ?string
     {
-        if($sid){
-            if(!$this->sid){
+        if ($sid && $this->isStart) {  // 启动后不允许设置SID
+            trigger_error('Session has started so cannot reset sid');
+            return null;
+        } else {  // 在启动前允许任意进行设置
+            if ($sid) {
                 $this->sid = $sid;
                 return $sid;
-            }else{
-                return null;
+            } else {
+                return $this->sid;
             }
-        }else{
-            return $this->sid;
         }
     }
 
-    function name(string $sessionName = null):?string
+    function name(string $sessionName = null): ?string
     {
-        if($sessionName){
-            if(!$this->isStart){
+        if ($sessionName) {
+            if (!$this->isStart) {
                 $this->sessionName = $sessionName;
                 return $sessionName;
-            }else{
+            } else {
                 return null;
             }
-        }else{
+        } else {
             return $this->sessionName;
         }
     }
@@ -80,22 +85,22 @@ class SessionDriver implements SessionDriverInterface
     /*
      * 注意，这里并不是同步写入。write close的时候，才真实写入（与php一致）。
      */
-    function set($key,$val):bool
+    function set($key, $val): bool
     {
-        if($this->isStart){
+        if ($this->isStart) {
             $this->data[$key] = $val;
             return true;
-        }else{
+        } else {
             trigger_error('session is close now,please start session');
             return false;
         }
     }
 
-    function exist($key):bool
+    function exist($key): bool
     {
-        if($this->isStart){
+        if ($this->isStart) {
             return isset($this->data[$key]);
-        }else{
+        } else {
             trigger_error('session is close now,please start session');
             return false;
         }
@@ -103,38 +108,39 @@ class SessionDriver implements SessionDriverInterface
 
     function get($key)
     {
-        if($this->isStart){
-            if(isset($this->data[$key])){
+        if ($this->isStart) {
+            if (isset($this->data[$key])) {
                 return $this->data[$key];
-            }else{
+            } else {
                 return null;
             }
-        }else{
+        } else {
             trigger_error('session is close now,please start session');
             return null;
         }
     }
+
     /*
      * 根据规范，session_destroy() 销毁当前会话中的全部数据，
      * 但是不会重置当前会话所关联的全局变量， 也不会重置会话 cookie。 如果需要再次使用会话变量，
      *  必须重新调用 session_start() 函数。
      */
-    function destroy():bool
+    function destroy(): bool
     {
-        if($this->isStart){
+        if ($this->isStart) {
             $this->data = [];
             $this->handler->destroy($this->sid);
             return true;
-        }else{
+        } else {
             return false;
         }
     }
 
-    function writeClose():bool
+    function writeClose(): bool
     {
-        if($this->isStart){
+        if ($this->isStart) {
             $this->isStart = false;
-            if(!$this->handler->write($this->sid,serialize($this->data))){
+            if (!$this->handler->write($this->sid, serialize($this->data))) {
                 trigger_error("save session {$this->sessionName}@{$this->sid} fail");
             }
             $this->handler->close();
@@ -144,21 +150,24 @@ class SessionDriver implements SessionDriverInterface
         return false;
     }
 
-    function start():bool
+    function start(?string $sid = null): bool
     {
-        if(!$this->isStart){
-            $this->isStart = $this->handler->open($this->savePath,$this->sessionName);
-            if(!$this->isStart){
+        if ($sid) { // 如果指定了SID 进行预设
+            $this->sid($sid);
+        }
+        if (!$this->isStart) {
+            $this->isStart = $this->handler->open($this->savePath, $this->sessionName);
+            if (!$this->isStart) {
                 trigger_error("session open {$this->savePath}@{$this->sessionName} fail");
                 return false;
-            }else{
-                //开启成功，则准备sid;
+            } else {
+                //开启成功 如果当前没有设置SID则预生成;
                 $this->sid = $this->generateSid();
                 //载入数据,实现原则中，start后则对Session文件加锁
                 $data = $this->handler->read($this->sid);
-                if(!empty($data)){
+                if (!empty($data)) {
                     $data = unserialize($data);
-                    if(is_array($data)){
+                    if (is_array($data)) {
                         $this->data = $data;
                     }
                 }
@@ -173,29 +182,64 @@ class SessionDriver implements SessionDriverInterface
         $this->writeClose();
     }
 
-    function gc($maxLifeTime):bool
+    function gc($maxLifeTime): bool
     {
         $this->handler->gc($maxLifeTime);
         return true;
     }
 
-    private function generateSid():string
+    private function generateSid(): string
     {
         $sid = $this->request->getCookieParams($this->sessionName);
-        if(!empty($sid)){
+        if (!empty($sid) && !$this->sid) {
             return $sid;
-        }else{
-            $sid = md5(microtime(true).$this->request->getSwooleRequest()->fd);
-            $this->request->withCookieParams(
-                [
+        } else {
+            $sid = $this->sid;
+            if (!$this->sid) {
+                $sid = md5(microtime(true) . $this->request->getSwooleRequest()->fd);
+            }
+            $this->request->withCookieParams([
                     $this->sessionName => $sid
                 ]
                 +
                 $this->request->getCookieParams()
             );
-            $this->response->setCookie($this->sessionName,$sid);
+            $this->response->setCookie($this->sessionName, $sid, $this->getExpire(), $this->path, $this->domain, $this->secure, $this->httpOnly);
             return $sid;
         }
+    }
+
+    public function setPath(string $path): void
+    {
+        $this->path = $path;
+    }
+
+    public function setDomain(string $domain): void
+    {
+        $this->domain = $domain;
+    }
+
+    public function setSecure(bool $secure): void
+    {
+        $this->secure = $secure;
+    }
+
+    public function setHttpOnly(bool $httpOnly): void
+    {
+        $this->httpOnly = $httpOnly;
+    }
+
+    public function setExpire(int $seconds): void
+    {
+        $this->expire = $seconds;
+    }
+
+    public function getExpire(): ?int
+    {
+        if (!$this->expire) {
+            return null;
+        }
+        return time() + $this->expire;
     }
 
     private function resetStatus()
