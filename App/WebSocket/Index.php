@@ -20,8 +20,8 @@ class Index extends Controller
     public function index()
     {
         $param = $this->caller()->getArgs();
-        pp($param);
         $fd = $this->caller()->getClient()->getFd();
+
         switch ($param['type']) {
             case 'login': //登录
                 $data = [
@@ -35,8 +35,34 @@ class Index extends Controller
                 ];
                 Room::task(json_encode($data));
                 break;
+            case '2':   //新消息
+                $data = [
+                    'task' => 'new',
+                    'params' => [
+                        'name' => $param['name'],
+                        'avatar' => $param['avatar'],
+                    ],
+                    'c' => $param['c'],
+                    'message' => $param['message'],
+                    'fd' => $fd,
+                    'roomid' => $param['roomid']
+                ];
+                Room::task(json_encode($data));
+                break;
+            case '3':   //改变房间
+                $data = [
+                    'task' => 'change',
+                    'params' => [
+                        'name' => $param['name'],
+                        'avatar' => $param['avatar']
+                    ],
+                    'fd' => $fd,
+                    'oldroomid' => $param['oldroomid'],
+                    'roomid' => $param['roomid']
+                ];
+                Room::task(json_encode($data));
+                break;
             case 'heartbeat': //心跳
-                pp("fd:{$fd}");
                 $data = [
                     'code' => 7,
                     'type' => 'heartbeat',

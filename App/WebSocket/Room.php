@@ -30,6 +30,12 @@ class Room
     private $fdToUserId = 'fd_to_userid';
 
     /**
+     * 服务器间通信的发布订阅channel名
+     * @var string
+     */
+    private $channel_name = 'send_msg_channel';
+
+    /**
      * 统一接收数据,发送数据
      * @param string $jsonStr
      */
@@ -43,16 +49,46 @@ class Room
             return;
         }
         switch ($data['task']) {
-            case 'open':
+            case 'open':  //onOpen事件调用
                 $pushMsg = $this->open();
                 $wsServer->push($data['fd'], json_encode($pushMsg));
                 break;
-            case 'login':
-                $this->doLogin($data);
+            case 'login': //登录
+                $pushMsg = $this->doLogin($data);
+                break;
+            case 'new': //新消息
+                $pushMsg = $this->sendNewMsg($data);
+                break;
+            case 'change':
+                $this->changeRoom($data);
                 break;
             default:
                 break;
         }
+        $this->sendMsg($pushMsg, $data['fd']);
+    }
+
+    /**
+     * 发送消息
+     * @param $pushMsg 要发送的消息
+     * @param $myfd 当前客户端的fd
+     */
+    public function sendMsg($pushMsg, int $myfd)
+    {
+        $wsServer = ServerManager::getInstance()->getSwooleServer();
+        foreach ($wsServer->connections as $fd) {
+            if ($fd == $myfd) {
+                $pushMsg['data']['mine'] = 1;
+            } else {
+                $pushMsg['data']['mine'] = 0;
+            }
+            $wsServer->push($fd, json_encode($pushMsg));
+        }
+        $pushMsg['disfd'] = json_decode($this->getDistributeFd($myfd), true);
+        $predis = PredisPool::defer();
+        pp("[发布消息] " . print_r($pushMsg, true));
+        $obj = $predis->getRedis();
+        $obj->publish($this->channel_name, json_encode($pushMsg));
     }
 
     /**
@@ -102,7 +138,7 @@ class Room
     }
 
     /**
-     * 获取制定房间里的用户信息
+     * 获取指定房间里的用户信息
      * @param $roomId
      * @return mixed
      * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
@@ -131,10 +167,11 @@ class Room
         $pushMsg['code'] = 1;
         $pushMsg['msg'] = $data['params']['name'] . "加入了群聊";
 
+        $clientDomain = Config::getInstance()->getConf('CLIENT_DOMAIN');
         $pushMsg['data']['roomid'] = $data['roomid'];
         $pushMsg['data']['fd'] = $data['fd'];
         $pushMsg['data']['name'] = $data['params']['name'];
-        $pushMsg['data']['avatar'] = DOMAIN . '/static/images/avatar/f1/f_' . rand(1, 12) . '.jpg';
+        $pushMsg['data']['avatar'] = $clientDomain . '/static/images/avatar/f1/f_' . rand(1, 12) . '.jpg';
         $pushMsg['data']['time'] = date("Y-m-d H:i:s", time());
 
         //将新登录的用户存入redis hash
@@ -152,14 +189,7 @@ class Room
 
             return $pushMsg;
         });
-        self::getRedis()->hSet(self::$chatUser, $userId, json_encode($pushMsg['data']));
-
-        $disFd = self::getDistributeFd($data['fd']);
-        self::getRedis()->hSet(self::$fdToUserId, $disFd, $userId);
-        //加入房间
-        self::joinRoom($data['roomid'], $data['fd']);
-
-        return $pushMsg;
+        return $res;
     }
 
     public function getDistributeFd(int $fd): string
@@ -183,9 +213,20 @@ class Room
         return sprintf("%s:%s", $ip, $port);
     }
 
+    /**
+     * 进入房间
+     * @param $roomId
+     * @param int $fd
+     */
     public function joinRoom($roomId, int $fd)
     {
         $userId = $this->getUserId($fd);
+        pp("[join room获取的userid] {$userId}");
+        $disFd = $this->getDistributeFd($fd);
+
+        $predis = PredisPool::defer();
+        $predis->zAdd($this->rfMap, $roomId, $disFd);
+        $predis->hSet("room:{$roomId}", $disFd, $userId);
     }
 
     /**
@@ -194,10 +235,177 @@ class Room
      */
     public function getUserId(int $fd)
     {
-        PredisPool::defer();
+        $predis = PredisPool::defer();
         $disFd = $this->getDistributeFd($fd);
-        $userId = PredisPool::invoke(function (PredisObject $predis) use ($disFd) {
+        $userId = $predis->hGet($this->fdToUserId, $disFd);
+        return $userId;
+    }
 
-        });
+    public function cleanData()
+    {
+        try {
+            $predis = PredisPool::defer();
+            if ($predis->exists($this->rfMap)) {
+                $predis->del($this->rfMap);
+                pp("清理[{$this->rfMap}]成功");
+            }
+            if ($predis->exists($this->chatUser)) {
+                $predis->del($this->chatUser);
+                pp("清理[{$this->chatUser}]成功");
+            }
+            if ($predis->exists($this->fdToUserId)) {
+                $predis->del($this->fdToUserId);
+                pp("清理[{$this->fdToUserId}]成功");
+            }
+            $rooms = Config::getInstance()->getConf('rooms');
+            foreach ($rooms as $k => $v) {
+                $roomKey = sprintf("room:%d", $v);
+                if ($predis->exists($roomKey)) {
+                    $predis->del($roomKey);
+                    pp("清理[{$roomKey}]成功");
+                }
+            }
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+    public function sendNewMsg(array $data)
+    {
+        $pushMsg['code'] = 2;
+        $pushMsg['msg'] = "";
+        $pushMsg['data']['roomid'] = $data['roomid'];
+        $pushMsg['data']['fd'] = $data['fd'];
+        $pushMsg['data']['name'] = $data['params']['name'];
+        $pushMsg['data']['avatar'] = $data['params']['avatar'];
+        $pushMsg['data']['newmessage'] = escape(htmlspecialchars($data['message']));
+        $pushMsg['data']['remains'] = array();
+        if ($data['c'] == 'img') {
+            $pushMsg['data']['newmessage'] = '<img class="chat-img" onclick="preview(this)" style="display: block; max-width: 120px; max-height: 120px; visibility: visible;" src=' . $pushMsg['data']['newmessage'] . '>';
+        } else {
+            $emotion = Config::getInstance()->getConf('emotion');
+            foreach ($emotion as $_k => $_v) {
+                $pushMsg['data']['newmessage'] = str_replace($_k, $_v, $pushMsg['data']['newmessage']);
+            }
+            $tmp = $this->remind($data['roomid'], $pushMsg['data']['newmessage']);
+
+            if ($tmp) {
+                $pushMsg['data']['newmessage'] = $tmp['msg'];
+                $pushMsg['data']['remains'] = $tmp['remains'];
+            }
+            unset($tmp);
+        }
+        $pushMsg['data']['time'] = date("H:i", time());
+        unset($data);
+        return $pushMsg;
+    }
+
+    public function remind($roomid, $msg)
+    {
+        $data = array();
+        if ($msg != "") {
+            $data['msg'] = $msg;
+            //正则匹配出所有@的人来
+            $s = preg_match_all('~@(.+?)　~', $msg, $matches);
+            if ($s) {
+                $m1 = array_unique($matches[0]);
+                $m2 = array_unique($matches[1]);
+
+                $users = $this->getUsersByRoom($roomid);
+
+                $m3 = array();
+                foreach ($users as $_k => $_v) {
+                    $m3[$_v['name']] = $_v['fd'];
+                }
+                $i = 0;
+                foreach ($m2 as $_k => $_v) {
+                    if (array_key_exists($_v, $m3)) {
+                        $data['msg'] = str_replace($m1[$_k], '<font color="blue">' . trim($m1[$_k]) . '</font>', $data['msg']);
+                        $data['remains'][$i]['fd'] = $m3[$_v];
+                        $data['remains'][$i]['name'] = $_v;
+                        $i++;
+                    }
+                }
+                unset($users);
+                unset($m1, $m2, $m3);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 更换房间
+     * @param $data
+     * @return mixed
+     */
+    public function changeRoom($data)
+    {
+        $pushMsg['code'] = 6;
+        $pushMsg['msg'] = '换房成功';
+
+        $res = $this->changeUser($data['oldroomid'], $data['fd'], $data['roomid']);
+        if ($res) {
+            $pushMsg['data']['oldroomid'] = $data['oldroomid'];
+            $pushMsg['data']['roomid'] = $data['roomid'];
+            $pushMsg['data']['mine'] = 0;
+            $pushMsg['data']['fd'] = $data['fd'];
+            $pushMsg['data']['name'] = $data['params']['name'];
+            $pushMsg['data']['avatar'] = $data['params']['avatar'];
+            $pushMsg['data']['time'] = date("H:i", time());
+            unset($data);
+            return $pushMsg;
+        }
+    }
+
+    /**
+     * 切换房间需要更改的redis数据
+     * @param $oldRoomId
+     * @param $fd
+     * @param $newRoomId
+     * @return bool
+     */
+    public function changeUser($oldRoomId, $fd, $newRoomId)
+    {
+        //退出老房间
+        $this->exitRoom($oldRoomId, $fd);
+        //加入新房间
+        $this->joinRoom($newRoomId, $fd);
+
+        return true;
+    }
+
+    /**
+     * 退出房间
+     * @param $oldRoomId
+     * @param $fd
+     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
+     * @throws \EasySwoole\Component\Pool\Exception\PoolException
+     */
+    public function exitRoom($oldRoomId, $fd)
+    {
+        $disFd = $this->getDistributeFd($fd);
+        $predis = PredisPool::defer();
+        $predis->hdel("room:{$oldRoomId}", $disFd);
+        $predis->zRem($this->rfMap, $disFd);
+    }
+
+    /**
+     * 通过客户端连接ID 获取用户的基本信息
+     * @param $fd
+     * @return mixed
+     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
+     * @throws \EasySwoole\Component\Pool\Exception\PoolException
+     */
+    public function getUserInfoByFd($fd)
+    {
+        $userId = $this->getUserId($fd);
+        $predis = PredisPool::defer();
+        $userInfo = $predis->hGet($this->chatUser, $userId);
+        return json_decode($userInfo, true);
+    }
+
+    public function getChanelName()
+    {
+        return $this->channel_name;
     }
 }

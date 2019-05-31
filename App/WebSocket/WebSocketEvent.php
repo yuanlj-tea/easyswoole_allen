@@ -24,8 +24,8 @@ class WebSocketEvent
 
     public static function onClose(\swoole_server $server, int $fd, int $reactorId)
     {
-        /** @var array $info */
         $info = $server->getClientInfo($fd);
+
         /**
          * 判断此fd 是否是一个有效的 websocket 连接
          * 参见 https://wiki.swoole.com/wiki/page/490.html
@@ -40,6 +40,17 @@ class WebSocketEvent
             } else {
                 echo "client close\n";
             }
+            //获取用户信息
+            $user = Room::getUserInfoByFd($fd);
+            if ($user) {
+                $data = array(
+                    'task' => 'logout',
+                    'params' => array('name' => $user['name']),
+                    'fd' => $fd
+                );
+                Room::task(json_encode($data));
+            }
+            echo "[client closed]{$fd}\n";
         }
     }
 }

@@ -63,7 +63,12 @@ var chat = {
         var json = {
             "class": "Index",
             "action": "index",
-            "type": chat.data.type, "name": name, "email": email, 'roomid': '1'
+            "param": {
+                "type": chat.data.type,
+                "name": name,
+                "email": email,
+                'roomid': '1'
+            }
         };
         chat.wsSend(JSON.stringify(json));
         return false;
@@ -95,12 +100,16 @@ var chat = {
         if (text.length == 0) return false;
         chat.data.type = 2; //发送消息标志
         var json = {
-            "type": chat.data.type,
-            "name": chat.data.name,
-            "avatar": chat.data.avatar,
-            "message": text,
-            "c": 'text',
-            "roomid": this.data.crd
+            "class": "Index",
+            "action": "index",
+            "param": {
+                "type": chat.data.type,
+                "name": chat.data.name,
+                "avatar": chat.data.avatar,
+                "message": text,
+                "c": 'text',
+                "roomid": this.data.crd
+            }
         };
         chat.wsSend(JSON.stringify(json));
         return true;
@@ -344,11 +353,16 @@ var chat = {
         //用户切换房间
         this.data.type = 3;//改变房间
         var json = {
-            "type": chat.data.type,
-            "name": chat.data.name,
-            "avatar": chat.data.avatar,
-            "oldroomid": oldroomid,
-            "roomid": this.data.crd
+            "class": "Index",
+            "action": "index",
+            "param": {
+                "type": chat.data.type,
+                "name": chat.data.name,
+                "avatar": chat.data.avatar,
+                "oldroomid": oldroomid,
+                "roomid": this.data.crd
+            }
+
         };
         chat.wsSend(JSON.stringify(json));
 
