@@ -21,8 +21,8 @@
                     method: {
                         callback: function (that) {
                             if (!$.app.method.uploadOption.onload) return false;
-                            console.log(that);
-                            var text = that.contentWindow.document.body.innerHTML;
+                            // var text = that.contentWindow.document.body.innerHTML;
+                            var text = that.contentWindow.document.body.innerText;
                             console.log(text);
                             $('#' + $.app.method.uploadOption.id).remove();
                             try {
