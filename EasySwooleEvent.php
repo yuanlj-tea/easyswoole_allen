@@ -75,10 +75,9 @@ class EasySwooleEvent implements Event
                 //预创建数量,必须小于连接池最大数量
                 PoolManager::getInstance()->getPool(RedisPool::class)->preLoad(6);
             }
-
-            //清理聊天室redis数据
-            if ($workerId == 0) {
-                echo "worker:{$workerId} start\n";
+            // pp("worker:{$workerId} start");
+            if($workerId == 0){
+                //清理聊天室redis数据
                 Room::cleanData();
             }
         });
@@ -106,6 +105,7 @@ class EasySwooleEvent implements Event
         //websocket控制器
         $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
         if ($serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
+            //添加聊天订阅消息子进程
             $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
             $swooleServer->addProcess($chatSubscribeProcess);
 

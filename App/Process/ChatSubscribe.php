@@ -10,8 +10,10 @@ namespace App\Process;
 
 
 use App\Libs\Facades\Room;
+use App\Libs\Predis;
 use App\Utility\Pool\Predis\PredisPool;
 use EasySwoole\Component\Process\AbstractProcess;
+use EasySwoole\EasySwoole\Config;
 use EasySwoole\EasySwoole\ServerManager;
 
 class ChatSubscribe extends AbstractProcess
@@ -19,15 +21,15 @@ class ChatSubscribe extends AbstractProcess
     protected function run($arg)
     {
         try {
+            ini_set('default_socket_timeout', -1);
             $wsServer = ServerManager::getInstance()->getSwooleServer();
 
-            $predis = PredisPool::defer();
-            $obj = $predis->getRedis();
-            $obj->subscribe(Room::getChanelName(), function ($instance, $channelName, $message) use ($wsServer) {
+            $config = Config::getInstance()->getConf('REDIS');
+            $predis = new Predis($config);
+            $predis->getRedis()->subscribe([Room::getChanelName()], function ($instance, $channelName, $message) use ($wsServer) {
                 $pushMsg = json_decode($message, 1);
-                pp(__CLASS__."子进程接收到消息",print_r($pushMsg,true));
                 $localIpPort = Room::getIpPort();
-                pp($localIpPort, $pushMsg['disfd']['server']);
+                pp(sprintf("[local ip port] %s [remote ip port] %s", $localIpPort, $pushMsg['disfd']['server']));
                 if ($pushMsg['disfd']['server'] != $localIpPort) {
                     foreach ($wsServer->connections as $fd) {
                         pp("其它服务器发来的消息:本机fd:" . $fd);

@@ -131,7 +131,7 @@ class Index extends AbstractController
     {
         $request = $this->request();
         $file = $request->getUploadedFile('img')->moveTo('/tmp/test.jpg');
-        p($file);
+        pp($file);
     }
 
     public function onRequest(? string $action): ?bool

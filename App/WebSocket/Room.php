@@ -3,6 +3,7 @@
 
 namespace App\WebSocket;
 
+use App\Libs\Predis;
 use App\Utility\Pool\Predis\PredisObject;
 use App\Utility\Pool\Predis\PredisPool;
 use EasySwoole\EasySwoole\Config;
@@ -60,7 +61,10 @@ class Room
                 $pushMsg = $this->sendNewMsg($data);
                 break;
             case 'change':
-                $this->changeRoom($data);
+                $pushMsg = $this->changeRoom($data);
+                break;
+            case 'logout':
+                $pushMsg = $this->doLogout($data);
                 break;
             default:
                 break;
@@ -86,7 +90,7 @@ class Room
         }
         $pushMsg['disfd'] = json_decode($this->getDistributeFd($myfd), true);
         $predis = PredisPool::defer();
-        pp("[发布消息] " . print_r($pushMsg, true));
+        // pp("[发布消息] " . print_r($pushMsg, true));
         $obj = $predis->getRedis();
         $obj->publish($this->channel_name, json_encode($pushMsg));
     }
@@ -281,7 +285,7 @@ class Room
         $pushMsg['data']['newmessage'] = escape(htmlspecialchars($data['message']));
         $pushMsg['data']['remains'] = array();
         if ($data['c'] == 'img') {
-            $pushMsg['data']['newmessage'] = '<img class="chat-img" onclick="preview(this)" style="display: block; max-width: 120px; max-height: 120px; visibility: visible;" src=' . $pushMsg['data']['newmessage'] . '>';
+            $pushMsg['data']['newmessage'] = '<img class="chat-img" onclick="preview(this)" style="display: block; max-width: 120px; max-height: 120px; visibility: visible;" src="' . $pushMsg['data']['newmessage'] . '">';
         } else {
             $emotion = Config::getInstance()->getConf('emotion');
             foreach ($emotion as $_k => $_v) {
@@ -291,7 +295,7 @@ class Room
 
             if ($tmp) {
                 $pushMsg['data']['newmessage'] = $tmp['msg'];
-                $pushMsg['data']['remains'] = $tmp['remains'];
+                $pushMsg['data']['remains'] = isset($tmp['remains']) ? $tmp['remains'] : [];
             }
             unset($tmp);
         }
@@ -407,5 +411,55 @@ class Room
     public function getChanelName()
     {
         return $this->channel_name;
+    }
+
+    /**
+     * 客户端关闭连接,退出登录
+     */
+    public function doLogout($data)
+    {
+        //退出登录,删除相关redis信息
+        $this->logout($data['fd']);
+
+        $pushMsg['code'] = 3;
+        $pushMsg['msg'] = $data['params']['name'] . "退出了群聊";
+        $pushMsg['data']['fd'] = $data['fd'];
+        $pushMsg['data']['name'] = $data['params']['name'];
+        unset($data);
+        return $pushMsg;
+    }
+
+    /**
+     * 退出登录时清除redis数据
+     * @param $fd
+     */
+    public function logout($fd)
+    {
+        $predis = PredisPool::defer();
+        $userId = $this->getUserId($fd);
+        //关闭连接
+        $this->close($fd);
+        //从用户中删除
+        $predis->hdel($this->chatUser, $userId);
+    }
+
+    public function close($fd)
+    {
+        $roomId = $this->getRoomIdByFd($fd);
+        $this->exitRoom($roomId, $fd);
+    }
+
+    /**
+     * 通过客户端连接ID 获取房间ID
+     * @param $fd
+     * @return mixed
+     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
+     * @throws \EasySwoole\Component\Pool\Exception\PoolException
+     */
+    public function getRoomIdByFd($fd)
+    {
+        $disFd = $this->getDistributeFd($fd);
+        $predis = PredisPool::defer();
+        return $predis->zScore($this->rfMap,$disFd);
     }
 }
