@@ -7,7 +7,8 @@
         "swlib/saber": "^1.0",
         "easyswoole/rpc": "^2.0",
         "php-amqplib/php-amqplib": "^2.9",
-        "moolex/nsqclient": "^0.1.1"
+        "moolex/nsqclient": "^0.1.1",
+        "easyswoole/actor": "2.x-dev"
     },
     "autoload": {
         "psr-4": {
@@ -16,5 +17,11 @@
         "files": [
             "App/helpers.php"
         ]
+    },
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://packagist.laravel-china.org"
+        }
     }
 }

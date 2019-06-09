@@ -100,7 +100,11 @@ class Response
 
     public function __toString()
     {
-        // TODO: Implement __toString() method.
-        return $this->getBody();
+        $ret = $this->getBody();
+        if(is_string($ret)){
+            return $ret;
+        }else{
+            return '';
+        }
     }
 }

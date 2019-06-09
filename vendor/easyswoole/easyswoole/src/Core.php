@@ -11,12 +11,7 @@ namespace EasySwoole\EasySwoole;
 
 use EasySwoole\Component\Di;
 use EasySwoole\Component\Singleton;
-use EasySwoole\Console\Console;
-use EasySwoole\Console\ConsoleModuleContainer;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
-use EasySwoole\EasySwoole\Console\Module\Auth;
-use EasySwoole\EasySwoole\Console\Module\Log;
-use EasySwoole\EasySwoole\Console\Module\Server;
 use EasySwoole\EasySwoole\Crontab\Crontab;
 use EasySwoole\EasySwoole\Swoole\EventHelper;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
@@ -25,13 +20,15 @@ use EasySwoole\Http\Dispatcher;
 use EasySwoole\Http\Message\Status;
 use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
-use EasySwoole\Trace\AbstractInterface\LoggerInterface;
-use EasySwoole\Trace\AbstractInterface\TriggerInterface;
-use EasySwoole\Trace\Bean\Location;
 use EasySwoole\EasySwoole\Swoole\Task\AbstractAsyncTask;
 use EasySwoole\EasySwoole\Swoole\Task\SuperClosure;
+use EasySwoole\Log\LoggerInterface;
+use EasySwoole\Trigger\Location;
+use EasySwoole\Trigger\TriggerInterface;
+use EasySwoole\Utility\File;
 use Swoole\Server\Task;
-use EasySwoole\Console\Config as ConsoleConfig;
+use EasySwoole\Log\Logger as DefaultLogger;
+use EasySwoole\Trigger\Trigger as DefaultTrigger;
 
 ////////////////////////////////////////////////////////////////////
 //                          _ooOoo_                               //
@@ -148,7 +145,7 @@ class Core
             $tempDir = rtrim($tempDir,'/');
         }
         if(!is_dir($tempDir)){
-            mkdir($tempDir);
+            File::createDirectory($tempDir);
         }
         defined('EASYSWOOLE_TEMP_DIR') or define('EASYSWOOLE_TEMP_DIR',$tempDir);
 
@@ -160,13 +157,17 @@ class Core
             $logDir = rtrim($logDir,'/');
         }
         if(!is_dir($logDir)){
-            mkdir($logDir);
+            File::createDirectory($logDir);
         }
-        defined('EASYSWOOLE_LOG_DIR') or define('EASYSWOOLE_LOG_DIR',$logDir);
+        defined('EASYSWOOLE_LOG_DIR') or define('EASYSWOOLE_LOG_DIR', $logDir);
 
-        //设置默认文件目录值
-        Config::getInstance()->setConf('MAIN_SERVER.SETTING.pid_file',$tempDir.'/pid.pid');
-        Config::getInstance()->setConf('MAIN_SERVER.SETTING.log_file',$logDir.'/swoole.log');
+        // 设置默认文件目录值(如果自行指定了目录则优先使用指定的)
+        if (!Config::getInstance()->getConf('MAIN_SERVER.SETTING.pid_file')) {
+            Config::getInstance()->setConf('MAIN_SERVER.SETTING.pid_file', $tempDir . '/pid.pid');
+        }
+        if (!Config::getInstance()->getConf('MAIN_SERVER.SETTING.log_file')) {
+            Config::getInstance()->setConf('MAIN_SERVER.SETTING.log_file', $logDir . '/swoole.log');
+        }
     }
 
     private function registerErrorHandler()
@@ -177,18 +178,14 @@ class Core
         //初始化配置Logger
         $logger = Di::getInstance()->get(SysConst::LOGGER_HANDLER);
         if(!$logger instanceof LoggerInterface){
-            $logger = new \EasySwoole\Trace\Logger(EASYSWOOLE_LOG_DIR);
+            $logger = new DefaultLogger(EASYSWOOLE_LOG_DIR);
         }
         Logger::getInstance($logger);
 
         //初始化追追踪器
         $trigger = Di::getInstance()->get(SysConst::TRIGGER_HANDLER);
         if(!$trigger instanceof TriggerInterface){
-            /*
-             * DISPLAY_ERROR
-             */
-            $display = Config::getInstance()->getConf('DISPLAY_ERROR');
-            $trigger = new \EasySwoole\Trace\Trigger(Logger::getInstance(),$display);
+            $trigger = new DefaultTrigger(Logger::getInstance());
         }
         Trigger::getInstance($trigger);
 
@@ -346,21 +343,6 @@ class Core
 
     private function extraHandler()
     {
-        //注册Console
-        if(Config::getInstance()->getConf('CONSOLE.ENABLE')){
-            $config = Config::getInstance()->getConf('CONSOLE');
-            ServerManager::getInstance()->addServer('CONSOLE',$config['PORT'],SWOOLE_TCP,$config['LISTEN_ADDRESS']);
-            Console::getInstance()->attachServer(ServerManager::getInstance()->getSwooleServer('CONSOLE'),new ConsoleConfig());
-            Console::getInstance()->setServer(ServerManager::getInstance()->getSwooleServer());
-            ServerManager::getInstance()->getSwooleServer('CONSOLE')->on('close',function (){
-                Auth::$authTable->set(Config::getInstance()->getConf('CONSOLE.USER'),[
-                    'fd'=>0
-                ]);
-            });
-            ConsoleModuleContainer::getInstance()->set(new Auth());
-            ConsoleModuleContainer::getInstance()->set(new Server());
-            ConsoleModuleContainer::getInstance()->set(new Log());
-        }
         //注册crontab进程
         Crontab::getInstance()->__run();
     }

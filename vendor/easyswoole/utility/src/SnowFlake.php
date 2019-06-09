@@ -47,7 +47,7 @@ class SnowFlake
     {
         $Binary = str_pad(decbin($snowFlakeId), 64, '0', STR_PAD_LEFT);
         $Object = new \stdClass;
-        $Object->timestamp = bindec(substr($Binary, 0, 41)) + self::$twepoch;
+        $Object->timestamp = bindec(substr($Binary, 0, 42)) + self::$twepoch;
         $Object->dataCenterID = bindec(substr($Binary, 42, 5));
         $Object->workerID = bindec(substr($Binary, 47, 5));
         $Object->sequence = bindec(substr($Binary, -12));

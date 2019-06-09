@@ -52,6 +52,9 @@ class Random
 
     static function arrayRandOne(array $data)
     {
+        if(empty($data)){
+            return null;
+        }
         mt_srand();
         return $data[array_rand($data)];
     }
