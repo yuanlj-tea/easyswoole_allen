@@ -67,16 +67,17 @@ class EasySwooleEvent implements Event
     public static function mainServerCreate(EventRegister $register)
     {
         $conf = Config::getInstance();//获取配置文件
+        $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
 
         //注册onWorkerStart回调事件
-        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) {
+        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use($serverType){
             //在每个worker进程启动的时候，预创建redis连接池
             if ($server->taskworker == false) {
                 //预创建数量,必须小于连接池最大数量
                 PoolManager::getInstance()->getPool(RedisPool::class)->preLoad(6);
             }
             // pp("worker:{$workerId} start");
-            if($workerId == 0){
+            if($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER){
                 //清理聊天室redis数据
                 Room::cleanData();
             }
@@ -103,12 +104,11 @@ class EasySwooleEvent implements Event
         // $swooleServer->addProcess($amqpConsumeProcess);
 
         //websocket控制器
-        $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
         if ($serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
             //添加聊天订阅消息子进程
             $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
             $swooleServer->addProcess($chatSubscribeProcess);
-
+            
             $config = new \EasySwoole\Socket\Config();
             $config->setType($config::WEB_SOCKET);
             $config->setParser(new WebSocketParser());

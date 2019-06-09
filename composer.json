@@ -8,7 +8,8 @@
         "easyswoole/rpc": "^2.0",
         "php-amqplib/php-amqplib": "^2.9",
         "moolex/nsqclient": "^0.1.1",
-        "easyswoole/actor": "2.x-dev"
+        "easyswoole/actor": "2.x-dev",
+        "easyswoole/socket": "^1.1"
     },
     "autoload": {
         "psr-4": {
