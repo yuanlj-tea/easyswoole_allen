@@ -106,5 +106,5 @@ return [
     ],
     //聊天室的前端域名
     // 'CLIENT_DOMAIN' => 'http://192.168.1.207:8081'
-    'CLIENT_DOMAIN' => 'http://192.168.79.206:8082'
+    'CLIENT_DOMAIN' => 'http://192.168.79.206:8084'
 ];
