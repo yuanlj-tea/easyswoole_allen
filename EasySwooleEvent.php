@@ -15,12 +15,15 @@ use App\Process\AmqpConsume;
 use App\Process\ChatSubscribe;
 use App\Process\HotReload;
 use App\Process\Job\TestJob;
+use App\RoomActor\RoomActor;
+use App\UserActor\UserActor;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\Predis\PredisPool;
 use App\Utility\Pool\RedisPool;
 use App\WebSocket\WebSocketEvent;
 use App\WebSocket\WebSocketParser;
+use EasySwoole\Actor\Actor;
 use EasySwoole\Component\Di;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
@@ -53,11 +56,6 @@ class EasySwooleEvent implements Event
             ->register(RedisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
             ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
 
-        //注册rabbitmq连接池
-        PoolManager::getInstance()
-            ->register(AmqpPool::class, $conf->getConf('AMQP.POOL_MAX_NUM'))
-            ->setMinObjectNum((int)$conf->getConf('AMQP.POOL_MIN_NUM'));
-
         //注册Predis连接池
         PoolManager::getInstance()
             ->register(PredisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
@@ -66,60 +64,53 @@ class EasySwooleEvent implements Event
 
     public static function mainServerCreate(EventRegister $register)
     {
-        $conf = Config::getInstance();//获取配置文件
+        $conf = Config::getInstance();
         $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
 
+        $swooleServer = ServerManager::getInstance()->getSwooleServer();
+        $isDev = Core::getInstance()->isDev();
+
         //注册onWorkerStart回调事件
-        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use($serverType){
-            //在每个worker进程启动的时候，预创建redis连接池
-            if ($server->taskworker == false) {
-                //预创建数量,必须小于连接池最大数量
-                PoolManager::getInstance()->getPool(RedisPool::class)->preLoad(6);
-            }
-            // pp("worker:{$workerId} start");
-            if($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER){
+        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use ($serverType) {
+            if ($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
                 //清理聊天室redis数据
                 Room::cleanData();
             }
         });
 
-        $swooleServer = ServerManager::getInstance()->getSwooleServer();//获取swoole server
-        $isDev = Core::getInstance()->isDev();
-
-        // if ($isDev) {
         //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
         $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
         $swooleServer->addProcess($process);
-        // }
 
-        //amqp消费自定义进程
-        // $arg = [
-        //     'type' => 'direct',
-        //     'exchange' => 'direct_logs',
-        //     'queue' => 'queue',
-        //     'routeKey' => 'test',
-        //     'class' => TestJob::class //要执行的任务类
-        // ];
-        // $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
-        // $swooleServer->addProcess($amqpConsumeProcess);
+
+        // 注册actor服务
+        Actor::getInstance()->register(UserActor::class);
+        Actor::getInstance()->register(RoomActor::class);
+        Actor::getInstance()
+            ->setListenAddress('0.0.0.0')
+            ->setListenPort(9600)
+            ->setTempDir(EASYSWOOLE_TEMP_DIR);
+        Actor::getInstance()->attachServer($swooleServer);
+
+        self::createRoomActor($conf);
+
 
         //websocket控制器
-        if ($serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
-            //添加聊天订阅消息子进程
-            $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
-            $swooleServer->addProcess($chatSubscribeProcess);
-            
-            $config = new \EasySwoole\Socket\Config();
-            $config->setType($config::WEB_SOCKET);
-            $config->setParser(new WebSocketParser());
+        //添加聊天订阅消息子进程
+        $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
+        $swooleServer->addProcess($chatSubscribeProcess);
 
-            $dispatch = new Dispatcher($config);
-            $register->set(EventRegister::onOpen, [WebSocketEvent::class, 'onOpen']);
-            $register->set(EventRegister::onMessage, function (\swoole_websocket_server $server, \swoole_websocket_frame $frame) use ($dispatch) {
-                $dispatch->dispatch($server, $frame->data, $frame);
-            });
-            $register->set(EventRegister::onClose, [WebSocketEvent::class, 'onClose']);
-        }
+        $config = new \EasySwoole\Socket\Config();
+        $config->setType($config::WEB_SOCKET);
+        $config->setParser(new WebSocketParser());
+
+        $dispatch = new Dispatcher($config);
+        $register->set(EventRegister::onOpen, [WebSocketEvent::class, 'onOpen']);
+        $register->set(EventRegister::onMessage, function (\swoole_websocket_server $server, \swoole_websocket_frame $frame) use ($dispatch) {
+            $dispatch->dispatch($server, $frame->data, $frame);
+        });
+        $register->set(EventRegister::onClose, [WebSocketEvent::class, 'onClose']);
+
     }
 
     public static function onRequest(Request $request, Response $response): bool
@@ -148,6 +139,19 @@ class EasySwooleEvent implements Event
                     Config::getInstance()->loadFile($file);
                 }
             }
+        }
+    }
+
+    public static function createRoomActor(Config $config)
+    {
+        $roomConf = $config->getConf('rooms');
+        foreach ($roomConf as $k => $v) {
+            go(function () use ($v) {
+                $roomActorId = RoomActor::client()->create([
+                    'roomId' => $v,
+                    'redisKey' => 'room:' . $v,
+                ]);
+            });
         }
     }
 }
