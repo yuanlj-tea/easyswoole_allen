@@ -16,7 +16,9 @@ use App\Process\ChatSubscribe;
 use App\Process\HotReload;
 use App\Process\Job\TestJob;
 use App\RoomActor\RoomActor;
+use App\RoomActor\RoomManager;
 use App\UserActor\UserActor;
+use App\UserActor\UserManager;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\Predis\PredisPool;
@@ -79,8 +81,8 @@ class EasySwooleEvent implements Event
         });
 
         //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
-        $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
-        $swooleServer->addProcess($process);
+        // $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
+        // $swooleServer->addProcess($process);
 
 
         // 注册actor服务
@@ -92,6 +94,8 @@ class EasySwooleEvent implements Event
             ->setTempDir(EASYSWOOLE_TEMP_DIR);
         Actor::getInstance()->attachServer($swooleServer);
 
+        RoomManager::init();
+        UserManager::init();
 
         //websocket控制器
         //添加聊天订阅消息子进程
@@ -137,20 +141,6 @@ class EasySwooleEvent implements Event
                     Config::getInstance()->loadFile($file);
                 }
             }
-        }
-    }
-
-    public static function createRoomActor(Config $config)
-    {
-        $roomConf = $config->getConf('rooms');
-        foreach ($roomConf as $k => $v) {
-            go(function () use ($v) {
-                $roomActorId = RoomActor::client()->create([
-                    'roomId' => $v,
-                    'redisKey' => 'room:' . $v,
-                ]);
-                pp($roomActorId);
-            });
         }
     }
 }

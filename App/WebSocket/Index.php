@@ -4,6 +4,7 @@
 namespace App\WebSocket;
 
 use App\Libs\Facades\Room;
+use App\UserActor\UserManager;
 use EasySwoole\EasySwoole\ServerManager;
 use EasySwoole\Socket\AbstractInterface\Controller;
 
@@ -33,7 +34,7 @@ class Index extends Controller
                     'fd' => $fd,
                     'roomid' => $param['roomid']
                 ];
-                Room::task(json_encode($data));
+                UserManager::task(json_encode($data));
                 break;
             case '2':   //新消息
                 $data = [

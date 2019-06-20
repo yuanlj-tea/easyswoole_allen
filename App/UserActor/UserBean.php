@@ -18,7 +18,7 @@ class UserBean extends SplBean
      * 用户email
      * @var
      */
-    protected $userEmail;
+    protected $name;
 
     /**
      * actor id
@@ -32,14 +32,20 @@ class UserBean extends SplBean
      */
     protected $roomId;
 
-    public function setUserEmail(string $email)
+    /**
+     * name在线状态,0:不在线,1:在线
+     * @var
+     */
+    protected $state;
+
+    public function setName(string $name)
     {
-        $this->userEmail = $email;
+        $this->name = $name;
     }
 
-    public function getUserEmail()
+    public function getName()
     {
-        return $this->userEmail;
+        return $this->name;
     }
 
     public function setFd(int $fd)
@@ -70,5 +76,15 @@ class UserBean extends SplBean
     public function getRoomId()
     {
         return $this->roomId;
+    }
+
+    public function setState(int $state)
+    {
+        $this->state = $state;
+    }
+
+    public function getState()
+    {
+        return $this->state;
     }
 }

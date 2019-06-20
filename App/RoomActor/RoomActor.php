@@ -4,9 +4,14 @@ namespace App\RoomActor;
 
 use EasySwoole\Actor\AbstractActor;
 use EasySwoole\Actor\ActorConfig;
+use EasySwoole\EasySwoole\ServerManager;
 
 class RoomActor extends AbstractActor
 {
+    private $roomId;
+
+    private $redisKey;
+
     public static function configure(ActorConfig $actorConfig)
     {
         $actorConfig->setActorName('room_actor');
@@ -14,7 +19,15 @@ class RoomActor extends AbstractActor
 
     protected function onStart()
     {
-        pp(__METHOD__,$this->actorId());
+        $this->roomId = $this->getArg()['roomId'];
+        $this->redisKey = $this->getArg()['redisKey'];
+        pp(sprintf("[RoomActor创建成功][roomId]%d[actorId]%s", $this->roomId, $this->actorId()));
+
+        RoomManager::addRoom(new RoomBean([
+            'actorId' => $this->actorId(),
+            'roomId' => $this->roomId,
+            'redisKey' => $this->redisKey
+        ]));
     }
 
     protected function onMessage($msg)

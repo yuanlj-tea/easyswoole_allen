@@ -212,6 +212,9 @@ var chat = {
                 case 7:
                     console.log(d.type);
                     break;
+                case 8:
+                    chat.displayError('chatErrorMessage_login', "用户已登录", 1);
+                    break;
                 default :
                     chat.displayError('chatErrorMessage_logout', d.msg, 1);
             }

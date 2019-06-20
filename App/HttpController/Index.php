@@ -33,13 +33,48 @@ use Swlib\Saber;
 use Swlib\SaberGM;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use co;
 
 class Index extends AbstractController
 {
     public function index()
     {
-        $ips = swoole_get_local_ip();
-        pp($ips);
+        // go(function() {
+        //     go(function () {
+        //         co::sleep(3.0);
+        //         go(function () {
+        //             co::sleep(2.0);
+        //             echo "co[3] end\n";
+        //         });
+        //         echo "co[2] end\n";
+        //     });
+        //
+        //     co::sleep(1.0);
+        //     echo "co[1] end\n";
+        // });
+
+        $array = co::getaddrinfo("oa.kingnet.com");
+        pp($array);
+
+        $cid = go(function () {
+            echo "co 1 start\n";
+            co::yield();
+            echo "co 1 end\n";
+        });
+
+        go(function () use ($cid) {
+            echo "co 2 start\n";
+            co::sleep(0.5);
+            co::resume($cid);
+            echo "co 2 end\n";
+        });
+
+        // $coStats = \co::stats();
+        // pp($coStats);
+
+        // $ips = swoole_get_local_ip();
+        // pp($ips);
+
         $this->writeJson(200, 'ok');
         /*RedisPool::invoke(function (RedisObject $redis){
             $key = 'user:1:api_count';
