@@ -14,7 +14,7 @@ class RoomActor extends AbstractActor
 
     protected function onStart()
     {
-        pp($this->getArg());
+        pp(__METHOD__,$this->actorId());
     }
 
     protected function onMessage($msg)

@@ -9,11 +9,16 @@
 namespace App\WebSocket;
 
 use App\Libs\Facades\Room;
+use App\RoomActor\RoomActor;
 
 class WebSocketEvent
 {
     public static function onOpen(\swoole_websocket_server $server, \swoole_http_request $request)
     {
+        RoomActor::client()->create([
+            'roomId' => 1,
+            'redisKey' => "room:1"
+        ]);
         pp("[onOpen] fd:{$request->fd}");
         $data = [
             'task' => 'open',

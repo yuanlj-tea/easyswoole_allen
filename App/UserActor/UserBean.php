@@ -26,6 +26,12 @@ class UserBean extends SplBean
      */
     protected $actorId;
 
+    /**
+     * 所属房间id
+     * @var
+     */
+    protected $roomId;
+
     public function setUserEmail(string $email)
     {
         $this->userEmail = $email;
@@ -54,5 +60,15 @@ class UserBean extends SplBean
     public function getActorId()
     {
         return $this->actorId;
+    }
+
+    public function setRoomId(int $roomId)
+    {
+        $this->roomId = $roomId;
+    }
+
+    public function getRoomId()
+    {
+        return $this->roomId;
     }
 }

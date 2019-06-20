@@ -92,8 +92,6 @@ class EasySwooleEvent implements Event
             ->setTempDir(EASYSWOOLE_TEMP_DIR);
         Actor::getInstance()->attachServer($swooleServer);
 
-        self::createRoomActor($conf);
-
 
         //websocket控制器
         //添加聊天订阅消息子进程
@@ -151,6 +149,7 @@ class EasySwooleEvent implements Event
                     'roomId' => $v,
                     'redisKey' => 'room:' . $v,
                 ]);
+                pp($roomActorId);
             });
         }
     }
