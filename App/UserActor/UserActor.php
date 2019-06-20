@@ -2,6 +2,8 @@
 
 namespace App\UserActor;
 
+use App\Libs\Command;
+use App\Utility\Pool\Predis\PredisPool;
 use EasySwoole\Actor\AbstractActor;
 use EasySwoole\Actor\ActorConfig;
 use EasySwoole\EasySwoole\ServerManager;
@@ -37,8 +39,6 @@ class UserActor extends AbstractActor
         $this->state = $this->getArg()['state'];
         UserManager::addUser(new UserBean([
             'name' => $this->name,
-            'fd' => $this->fd,
-            'roomId' => $this->roomId,
             'actorId' => $this->actorId(),
             'state' => $this->state
         ]));
@@ -48,16 +48,59 @@ class UserActor extends AbstractActor
 
     protected function onMessage($msg)
     {
-        ServerManager::getInstance()->getSwooleServer()->push($msg['data']['fd'],json_encode($msg));
-        if(!isset($msg['task'])){
-            return;
-        }
-        switch($msg['task']){
-            case 'login':
+        $wsServer = ServerManager::getInstance()->getSwooleServer();
+        if ($msg instanceof Command) {
+            $arg = $msg->getArg();
+            switch ($msg->getCommand()) {
+                case $msg::RECONNECT:
+                    $this->fd = $msg->getArg()['fd'];
+                    $this->roomId = $msg->getArg()['roomId'];
+                    $this->state = $msg->getArg()['state'];
 
-                break;
-            default:
-                break;
+                    $update = [
+                        'state' => $this->state
+                    ];
+                    UserManager::updateUserInfo($this->name, $update);
+                    pp(sprintf("[actor id]%s重新登录成功[fd]%d[roomId]%d", $this->actorId(), $this->fd, $this->roomId));
+                    break;
+                case $msg::LOGOUT:
+                    if ($this->fd == $arg['fd']) {
+                        UserManager::exitRoom($this->roomId, $this->name);
+                        $this->fd = 0;
+                        $this->roomId = 0;
+                        $this->state = 0;
+                        $update = [
+                            'state' => $this->state
+                        ];
+                        UserManager::updateUserInfo($this->name, $update);
+
+                        $pushMsg['code'] = 3;
+                        $pushMsg['msg'] = $this->name . "退出了群聊";
+                        $pushMsg['data']['fd'] = $arg['fd'];
+                        $pushMsg['data']['name'] = $this->name;
+                        UserManager::sendMsg($pushMsg,$arg['fd']);
+                    }
+                    break;
+                case $msg::CHANGE_ROOM:
+
+                    if ($this->name == $arg['data']['name']) {
+                        $this->roomId = $arg['data']['roomid'];
+                    }
+                    break;
+                case $msg::ALREADY_ONLINE:
+                    $arg['data']['mine'] = 1;
+                    $wsServer->push($arg['data']['fd'], json_encode($arg));
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            if ($this->fd == $msg['data']['fd']) {
+                $msg['data']['mine'] = 1;
+            } else {
+                $msg['data']['mine'] = 0;
+            }
+            $wsServer->push($this->fd, json_encode($msg));
         }
     }
 

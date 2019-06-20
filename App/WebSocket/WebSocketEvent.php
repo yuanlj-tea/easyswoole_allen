@@ -54,16 +54,13 @@ class WebSocketEvent
             } else {
                 echo "client close\n";
             }
-            //获取用户信息
-            $user = Room::getUserInfoByFd($fd);
-            if ($user) {
-                $data = array(
-                    'task' => 'logout',
-                    'params' => array('name' => $user['name']),
-                    'fd' => $fd
-                );
-                Room::task(json_encode($data));
-            }
+            
+            $data = array(
+                'task' => 'logout',
+                'fd' => $fd
+            );
+            UserManager::task(json_encode($data));
+
             echo "[client closed]{$fd}\n";
         }
     }

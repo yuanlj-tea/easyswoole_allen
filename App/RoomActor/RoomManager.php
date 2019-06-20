@@ -72,8 +72,6 @@ class RoomManager
      * 通过房间id获取对应actor id
      * @param $roomId
      * @return array
-     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
-     * @throws \EasySwoole\Component\Pool\Exception\PoolException
      */
     public static function getActorIdByRoomId($roomId)
     {

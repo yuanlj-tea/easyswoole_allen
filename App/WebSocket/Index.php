@@ -48,7 +48,7 @@ class Index extends Controller
                     'fd' => $fd,
                     'roomid' => $param['roomid']
                 ];
-                Room::task(json_encode($data));
+                UserManager::task(json_encode($data));
                 break;
             case '3':   //改变房间
                 $data = [
@@ -61,7 +61,7 @@ class Index extends Controller
                     'oldroomid' => $param['oldroomid'],
                     'roomid' => $param['roomid']
                 ];
-                Room::task(json_encode($data));
+                UserManager::task(json_encode($data));
                 break;
             case 'heartbeat': //心跳
                 $data = [

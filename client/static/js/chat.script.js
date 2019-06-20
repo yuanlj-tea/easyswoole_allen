@@ -213,7 +213,7 @@ var chat = {
                     console.log(d.type);
                     break;
                 case 8:
-                    chat.displayError('chatErrorMessage_login', "用户已登录", 1);
+                    chat.displayError('chatErrorMessage_logout', "用户已登录,请换个昵称登录", 1);
                     break;
                 default :
                     chat.displayError('chatErrorMessage_logout', d.msg, 1);

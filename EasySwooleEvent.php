@@ -8,25 +8,14 @@
 
 namespace EasySwoole\EasySwoole;
 
-
-use App\Container\Container;
-use App\Libs\Facades\Room;
-use App\Process\AmqpConsume;
-use App\Process\ChatSubscribe;
-use App\Process\HotReload;
-use App\Process\Job\TestJob;
 use App\RoomActor\RoomActor;
 use App\RoomActor\RoomManager;
 use App\UserActor\UserActor;
 use App\UserActor\UserManager;
-use App\Utility\Pool\AmqpPool;
-use App\Utility\Pool\MysqlPool;
 use App\Utility\Pool\Predis\PredisPool;
-use App\Utility\Pool\RedisPool;
 use App\WebSocket\WebSocketEvent;
 use App\WebSocket\WebSocketParser;
 use EasySwoole\Actor\Actor;
-use EasySwoole\Component\Di;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
 use EasySwoole\EasySwoole\AbstractInterface\Event;
@@ -34,8 +23,6 @@ use EasySwoole\Http\Request;
 use EasySwoole\Http\Response;
 use EasySwoole\Socket\Dispatcher;
 use EasySwoole\Utility\File;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
 
 class EasySwooleEvent implements Event
 {
@@ -47,16 +34,6 @@ class EasySwooleEvent implements Event
         //加载自定义配置
         self::loadConf();
         $conf = Config::getInstance();//获取配置文件
-
-        //注册mysql数据库连接池
-        PoolManager::getInstance()
-            ->register(MysqlPool::class, $conf->getConf('MYSQL.POOL_MAX_NUM'))
-            ->setMinObjectNum((int)$conf->getConf('MYSQL.POOL_MIN_NUM'));
-
-        //注册redis连接池
-        PoolManager::getInstance()
-            ->register(RedisPool::class, $conf->getConf('REDIS.POOL_MAX_NUM'))
-            ->setMinObjectNum((int)$conf->getConf('REDIS.POOL_MIN_NUM'));
 
         //注册Predis连接池
         PoolManager::getInstance()
@@ -76,7 +53,7 @@ class EasySwooleEvent implements Event
         $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use ($serverType) {
             if ($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
                 //清理聊天室redis数据
-                Room::cleanData();
+                UserManager::cleanData();
             }
         });
 
@@ -98,10 +75,6 @@ class EasySwooleEvent implements Event
         UserManager::init();
 
         //websocket控制器
-        //添加聊天订阅消息子进程
-        $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
-        $swooleServer->addProcess($chatSubscribeProcess);
-
         $config = new \EasySwoole\Socket\Config();
         $config->setType($config::WEB_SOCKET);
         $config->setParser(new WebSocketParser());

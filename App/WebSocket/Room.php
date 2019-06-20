@@ -145,9 +145,6 @@ class Room
      * 获取指定房间里的用户信息
      * @param $roomId
      * @return mixed
-     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
-     * @throws \EasySwoole\Component\Pool\Exception\PoolException
-     * @throws \Throwable
      */
     public function getUsersByRoom($roomId): array
     {
@@ -382,8 +379,6 @@ class Room
      * 退出房间
      * @param $oldRoomId
      * @param $fd
-     * @throws \EasySwoole\Component\Pool\Exception\PoolEmpty
-     * @throws \EasySwoole\Component\Pool\Exception\PoolException
      */
     public function exitRoom($oldRoomId, $fd)
     {
