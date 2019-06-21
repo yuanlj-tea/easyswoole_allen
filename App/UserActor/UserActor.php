@@ -3,6 +3,7 @@
 namespace App\UserActor;
 
 use App\Libs\Command;
+use App\RoomActor\RoomManager;
 use App\Utility\Pool\Predis\PredisPool;
 use EasySwoole\Actor\AbstractActor;
 use EasySwoole\Actor\ActorConfig;
@@ -65,7 +66,17 @@ class UserActor extends AbstractActor
                     break;
                 case $msg::LOGOUT:
                     if ($this->fd == $arg['fd']) {
+                        //用户退出房间
                         UserManager::exitRoom($this->roomId, $this->name);
+
+                        //给指定房间里的用户发消息,通知用户退出
+                        $pushMsg['code'] = 3;
+                        $pushMsg['msg'] = $this->name . "退出了群聊";
+                        $pushMsg['data']['fd'] = $arg['fd'];
+                        $pushMsg['data']['name'] = $this->name;
+                        $pushMsg['data']['roomid'] = $this->roomId;
+                        RoomManager::doLogout($this->roomId, $pushMsg);
+
                         $this->fd = 0;
                         $this->roomId = 0;
                         $this->state = 0;
@@ -73,16 +84,20 @@ class UserActor extends AbstractActor
                             'state' => $this->state
                         ];
                         UserManager::updateUserInfo($this->name, $update);
+                    }
+                    break;
+                case $msg::ROOM_SEND_LOGOUT:
+                    $arg['data']['this_room'] = 0;
+                    if ($this->roomId == $arg['data']['roomid']) {
+                        $arg['data']['this_room'] = 1;
+                    }
 
-                        $pushMsg['code'] = 3;
-                        $pushMsg['msg'] = $this->name . "退出了群聊";
-                        $pushMsg['data']['fd'] = $arg['fd'];
-                        $pushMsg['data']['name'] = $this->name;
-                        UserManager::sendMsg($pushMsg,$arg['fd']);
+                    $info = $wsServer->getClientInfo($this->fd);
+                    if($info && $info['websocket_status'] === WEBSOCKET_STATUS_FRAME){
+                        $wsServer->push($this->fd, json_encode($arg));
                     }
                     break;
                 case $msg::CHANGE_ROOM:
-
                     if ($this->name == $arg['data']['name']) {
                         $this->roomId = $arg['data']['roomid'];
                     }

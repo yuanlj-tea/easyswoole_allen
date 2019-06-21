@@ -110,20 +110,19 @@ class UserManager
             case 'login':
                 $pushMsg = self::doLogin($data);
                 if (!empty($pushMsg)) {
-                    self::sendMsg($pushMsg, $data['fd']);
+                    RoomManager::doLogin($data['roomid'], $pushMsg);
                 }
                 break;
             case 'new':
                 $pushMsg = self::sendNewMsg($data);
-                // self::sendToRoomMsg($data['roomid'], $pushMsg);
-                self::sendMsg($pushMsg,$data['fd']);
+                RoomManager::sendNewMsg($data['roomid'], $pushMsg);
                 break;
             case 'change':
                 $pushMsg = self::changeRoom($data);
-                self::sendMsg($pushMsg, $data['fd']);
+                RoomManager::changeRoom($pushMsg);
                 break;
             case 'logout':
-                $pushMsg = self::doLogout($data);
+                self::doLogout($data);
                 break;
             default:
                 break;
@@ -136,17 +135,6 @@ class UserManager
         $command->setCommand($command::LOGOUT);
         $command->setArg($data);
         UserActor::client()->sendAll($command);
-    }
-
-    /**
-     * 对指定房间id的用户actor id发送消息
-     */
-    public static function sendToRoomMsg(int $roomId, $pushMsg)
-    {
-        $roomActorId = RoomManager::getActorIdByRoomId($roomId);
-        foreach ($roomActorId as $v) {
-            UserActor::client()->send($v, $pushMsg);
-        }
     }
 
     public static function sendMsg($pushMsg, $myfd)
@@ -307,6 +295,7 @@ class UserManager
         } else {
             $predis = PredisPool::defer();
             $predis->hSet(self::$chatUser, $data['params']['name'], json_encode($pushMsg['data']));
+
             //用户第一次登录,创建用户actor
             UserActor::client()->create([
                 'name' => $data['params']['name'],
@@ -315,7 +304,14 @@ class UserManager
                 'state' => 1
             ]);
         }
-        self::joinRoom($data['roomid'], $data['params']['name']);
+        //给用户发房间信息
+        UserManager::task(json_encode([
+            'task' => 'open',
+            'fd' => $data['fd']
+        ]));
+
+        //用户加入房间
+        UserManager::joinRoom($data['roomid'], $data['params']['name']);
         return $pushMsg;
     }
 

@@ -17,23 +17,12 @@ class WebSocketEvent
 {
     public static function onOpen(\swoole_websocket_server $server, \swoole_http_request $request)
     {
-        $roomActorStatus = RoomActor::client()->status();
-        if (array_sum($roomActorStatus) == 0) {
-            $roomsConf = Config::getInstance()->getConf('rooms');
-            foreach ($roomsConf as $k => $v) {
-                RoomActor::client()->create([
-                    'roomId' => $v,
-                    'redisKey' => "room:" . $v
-                ]);
-            }
-        }
-
         pp("[onOpen] fd:{$request->fd}");
-        $data = [
+        /*$data = [
             'task' => 'open',
             'fd' => $request->fd
         ];
-        UserManager::task(json_encode($data));
+        UserManager::task(json_encode($data));*/
     }
 
     public static function onClose(\swoole_server $server, int $fd, int $reactorId)

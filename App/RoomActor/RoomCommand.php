@@ -1,46 +1,33 @@
 <?php
 
 
-namespace App\Libs;
+namespace App\RoomActor;
 
 
 use EasySwoole\Spl\SplBean;
 
-class Command extends SplBean
+class RoomCommand extends SplBean
 {
-    /**
-     * 用户重新登录连接
-     */
-    const RECONNECT = 1;
-
-    const WS_MSG = 2;
-
-    const REPLY_MSG = 3;
 
     /**
-     * 用户退出登录
+     * 用户登录
      */
-    const LOGOUT = 4;
+    const LOGIN = 1;
+
+    /**
+     * 用户发送新消息
+     */
+    const NEW_MSG = 2;
 
     /**
      * 用户切换房间
      */
-    const CHANGE_ROOM = 5;
+    const CHANGE_ROOM = 3;
 
     /**
-     * onOpen事件
+     * 触发onClose，退出
      */
-    const OPEN = 0;
-
-    /**
-     * 用户已在线
-     */
-    const ALREADY_ONLINE = 6;
-
-    /**
-     * RoomActor发送的退出
-     */
-    const ROOM_SEND_LOGOUT = 7;
+    const LOG_OUT =4;
 
     protected $command;
 

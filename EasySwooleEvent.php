@@ -49,18 +49,9 @@ class EasySwooleEvent implements Event
         $swooleServer = ServerManager::getInstance()->getSwooleServer();
         $isDev = Core::getInstance()->isDev();
 
-        //注册onWorkerStart回调事件
-        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use ($serverType) {
-            if ($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
-                //清理聊天室redis数据
-                UserManager::cleanData();
-            }
-        });
-
         //自适应热重启,虚拟机下可以传入disableInotify => true,强制使用扫描式热重启,规避虚拟机无法监听事件刷新
         // $process = (new HotReload('HotReload', ['disableInotify' => false]))->getProcess();
         // $swooleServer->addProcess($process);
-
 
         // 注册actor服务
         Actor::getInstance()->register(UserActor::class);
@@ -73,6 +64,26 @@ class EasySwooleEvent implements Event
 
         RoomManager::init();
         UserManager::init();
+
+        //注册onWorkerStart回调事件
+        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use ($serverType) {
+            if ($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
+                //清理聊天室redis数据
+                UserManager::cleanData();
+
+                //创建RoomActor
+                $roomActorStatus = RoomActor::client()->status();
+                if (array_sum($roomActorStatus) == 0) {
+                    $roomsConf = Config::getInstance()->getConf('rooms');
+                    foreach ($roomsConf as $k => $v) {
+                        RoomActor::client()->create([
+                            'roomId' => $v,
+                            'redisKey' => "room:" . $v
+                        ]);
+                    }
+                }
+            }
+        });
 
         //websocket控制器
         $config = new \EasySwoole\Socket\Config();

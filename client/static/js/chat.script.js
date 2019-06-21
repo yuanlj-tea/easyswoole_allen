@@ -183,10 +183,11 @@ var chat = {
                 case 3:
                     chat.removeUser('logout', d.data);
                     if (d.data.mine && d.data.action == 'logout') {
-
                         return;
                     }
-                    chat.displayError('chatErrorMessage_logout', d.msg, 1);
+                    if(d.data.this_room){
+                        chat.displayError('chatErrorMessage_logout', d.msg, 1);
+                    }
                     break;
                 case 4: //页面初始化
                     console.log(d);
