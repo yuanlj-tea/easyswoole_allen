@@ -29,4 +29,5 @@ php easyswoole start produce
 
 #### 5、流程图
 
-![](<https://www.processon.com/view/link/5d0c566ae4b0d4ba353f0eca>)
+<img src="<https://www.processon.com/view/link/5d0c566ae4b0d4ba353f0eca>">
+
