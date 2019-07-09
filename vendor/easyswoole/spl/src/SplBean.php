@@ -18,7 +18,9 @@ use EasySwoole\Spl\Exception\Exception;
 class SplBean implements \JsonSerializable
 {
     const FILTER_NOT_NULL = 1;
-    const FILTER_NOT_EMPTY = 2;//0 不算empty
+    const FILTER_NOT_EMPTY = 2;
+    const FILTER_NULL = 3;
+    const FILTER_EMPTY = 4;
 
     private $_keyMap = [];
     private $_classMap = [];
@@ -58,11 +60,15 @@ class SplBean implements \JsonSerializable
             });
         }else if($filter === self::FILTER_NOT_EMPTY){
             return array_filter($data,function ($val){
-                if($val === 0 || $val === '0'){
-                    return true;
-                }else{
-                    return !empty($val);
-                }
+                return !empty($val);
+            });
+        }else if($filter === self::FILTER_NULL){
+            return array_filter($data,function ($val){
+                return is_null($val);
+            });
+        }else if($filter === self::FILTER_EMPTY){
+            return array_filter($data,function ($val){
+                return empty($val);
             });
         }else if(is_callable($filter)){
             return array_filter($data,$filter);

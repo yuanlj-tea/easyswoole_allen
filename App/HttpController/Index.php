@@ -11,12 +11,13 @@ namespace App\HttpController;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
 use EasySwoole\FastCache\Cache;
+use EasySwoole\EasySwoole\Logger;
 
 class Index extends AbstractController
 {
     public function index()
     {
-
+        Logger::getInstance()->info('test');
     }
 
     public function onRequest(? string $action): ?bool

@@ -23,7 +23,7 @@ return [
             'reload_async' => true
         ],
     ],
-    'TEMP_DIR' => null,
+    'TEMP_DIR' => "/tmp",
     'LOG_DIR' => null,
     'CONSOLE'     => [//console组件配置,完整配置可查看:http://easyswoole.com/Manual/3.x/Cn/_book/SystemComponent/Console/Introduction.html
         'ENABLE'         => true,//是否开启console

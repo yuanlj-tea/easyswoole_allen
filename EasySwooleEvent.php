@@ -32,7 +32,7 @@ class EasySwooleEvent implements Event
         date_default_timezone_set('Asia/Shanghai');
 
         //加载自定义配置
-        self::loadConf();
+        // self::loadConf();
         $conf = Config::getInstance();//获取配置文件
 
         //注册Predis连接池
