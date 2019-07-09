@@ -21,7 +21,7 @@ class CorsMiddleware extends MiddlewareAbstract
      * @param Response $response
      * @return bool
      */
-    public function exec(Request $request, Response $response,SessionDriver $session): bool
+    public function exec(Request $request, Response $response): bool
     {
         $response->withHeader('Access-Control-Allow-Origin', '*');
         $response->withHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

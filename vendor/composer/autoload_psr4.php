@@ -28,6 +28,8 @@ return array(
     'EasySwoole\\Trigger\\' => array($vendorDir . '/easyswoole/trigger/src'),
     'EasySwoole\\Spl\\' => array($vendorDir . '/easyswoole/spl/src'),
     'EasySwoole\\Socket\\' => array($vendorDir . '/easyswoole/socket/src'),
+    'EasySwoole\\Session\\Test\\' => array($vendorDir . '/easyswoole/session/tests'),
+    'EasySwoole\\Session\\' => array($vendorDir . '/easyswoole/session/src'),
     'EasySwoole\\Rpc\\' => array($vendorDir . '/easyswoole/rpc/src'),
     'EasySwoole\\Mysqli\\' => array($vendorDir . '/easyswoole/mysqli/src'),
     'EasySwoole\\Log\\' => array($vendorDir . '/easyswoole/log/src'),

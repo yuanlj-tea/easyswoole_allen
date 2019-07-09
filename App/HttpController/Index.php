@@ -17,7 +17,7 @@ class Index extends AbstractController
 {
     public function index()
     {
-        Logger::getInstance()->info('test');
+        
     }
 
     public function onRequest(? string $action): ?bool
@@ -28,8 +28,7 @@ class Index extends AbstractController
         ];
         //要继承的中间件
         $this->middleware = [
-            CorsMiddleware::class,
-            ValidateCsrfToken::class,
+            CorsMiddleware::class
         ];
         return parent::onRequest($action);
     }

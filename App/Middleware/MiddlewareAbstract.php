@@ -32,7 +32,7 @@ abstract class MiddlewareAbstract
      * @param Response $response 响应对象
      * @return bool
      */
-    abstract function exec(Request $request, Response $response, SessionDriver $session): bool;
+    abstract function exec(Request $request, Response $response): bool;
 
     /**
      * 获取错误信息
