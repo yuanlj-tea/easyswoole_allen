@@ -14,7 +14,6 @@ if (file_exists($file)) {
     die("include composer autoload.php fail\n");
 }
 
-use Swoole\Coroutine\Redis;
 use App\Dispatch\DispatchProvider;
 use App\Container\Container;
 use EasySwoole\Component\Timer;
@@ -67,24 +66,32 @@ class Job
         $this->config = @require_once $this->easyswoole_root . '/dev.php';
 
         global $argv;
+        $this->DI = Container::getInstance();
+
+        //加载console
+        $registerCommand = $this->registerConsoleCommand();
 
         //help提示
         if (!isset($argv[1]) || strtolower($argv[1]) == 'help') {
-            $this->showHelp();
-        }
-
-        //注册连接池
-        $this->registerPool();
-
-        //生成数据库队列驱动表
-        if ($argv[1] == 'gen_database') {
-            $this->generateJobsDatabase();
-            return;
+            $this->showHelp($registerCommand);
         }
 
         //解析参数
         array_shift($argv);
         $argv = $this->parsingArgv($argv);
+
+
+        //注册连接池
+        $this->registerPool();
+
+
+        //生成数据库队列驱动表
+        if (isset($argv[1]) && $argv[1] == 'gen_database') {
+            $this->generateJobsDatabase();
+            return;
+        }
+
+
         if (!isset($argv['driver'])) {
             echo "缺少参数或参数错误\n";
             $this->showHelp();
@@ -96,7 +103,7 @@ class Job
             $this->runClass();
             return;
         }
-        $this->DI = Container::getInstance();
+
         //方式2
         if (isset($argv['driver']) && (isset($argv['queue']) || isset($argv['topic']))) {
             $tries = isset($argv['tries']) ? $argv['tries'] : 3;
@@ -134,7 +141,7 @@ class Job
     /**
      * 显示帮助提示
      */
-    public function showHelp()
+    public function showHelp($registerCommand = [])
     {
         $helpCode = <<<HELP
 1、支持队列驱动：redis、database、amqp、nsq
@@ -144,7 +151,20 @@ class Job
 3、具体使用参见readme:
     https://github.com/a1554610616/easyswoole_allen/blob/master/App/Dispatch/readme.md    
 HELP;
-        die($helpCode . "\n");
+        echo($helpCode . "\n");
+
+        if (!empty($registerCommand)) {
+            $promptHtml = <<<HTML
+4、已经注册的命令：\n
+HTML;
+            echo $promptHtml;
+            $registerCommand = ['a','b'];
+            foreach($registerCommand as $v){
+                echo $v."\n";
+            }
+        }
+        die;
+
 
     }
 
@@ -523,15 +543,6 @@ HELP;
         RedisPool::invoke(function (RedisObject $redis) use ($queueName, $queueData) {
             $redis->lPush($queueName . "_failed_job", json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         });
-
-        // $redis = new Redis();
-        // $redisConf = $this->config['REDIS'];
-        // if($redis->connect($redisConf['host'],$redisConf['port'])){
-        //     if(!empty($redisConf['auth'])){
-        //         $redis->auth($redisConf['auth']);
-        //         $redis->lPush($queueName . "_failed_job", json_encode($queueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-        //     }
-        // }
     }
 
     /**
@@ -610,6 +621,17 @@ CREATE TABLE `failed_jobs` (
         });
         swoole_event_wait();
         exit($exitStatus);
+    }
+
+    public function registerConsoleCommand()
+    {
+        $config = require_once __DIR__ . '/Console/config.php';
+        $registerCommand = [];
+        foreach ($config as $k => $v) {
+            $obj = $this->DI->get($v);
+            $registerCommand[$v] = $obj->getCommand();
+        }
+        return $registerCommand;
     }
 }
 
