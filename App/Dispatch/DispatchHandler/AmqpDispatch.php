@@ -60,7 +60,7 @@ class AmqpDispatch implements DispatchInterface
         try {
             $this->dispatch($dispatcher);
         } catch (\Exception $e) {
-            pp($e->getMessage());
+            pp(sprintf("[FILE] %s || [LINE] %s || [MSG] %s",$e->getFile(),$e->getLine(),$e->getMessage()));
         }
     }
 

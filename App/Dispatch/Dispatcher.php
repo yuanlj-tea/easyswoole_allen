@@ -365,7 +365,7 @@ abstract class Dispatcher
 
         } catch (\Exception $e) {
             throw new \Exception(
-                sprintf("FILE:%s || LINE:%s || MSG:%s", $e->getFile(), $e->getLine(), $e->getMessage())
+                pp(sprintf("[FILE] %s || [LINE] %s || [MSG] %s", $e->getFile(), $e->getLine(), $e->getMessage()))
             );
         }
 
