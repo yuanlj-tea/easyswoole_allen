@@ -158,14 +158,20 @@ HELP;
 4、已经注册的命令：\n
 HTML;
             echo $promptHtml;
-            $registerCommand = ['a','b'];
-            foreach($registerCommand as $v){
-                echo $v."\n";
+            // $registerCommand = ['a','b'];
+            foreach($registerCommand as $k=>$v){
+                $output = self::displayItem($k,$v)."\n";
+                echo $output;
             }
         }
         die;
 
 
+    }
+
+    static function displayItem($name, $value)
+    {
+        return "\e[32m" . str_pad($name, 30, ' ', STR_PAD_RIGHT)." : " . "\e[34m" . $value . "\e[0m";
     }
 
     /**
