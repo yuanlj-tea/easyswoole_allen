@@ -6,18 +6,6 @@
  * Time: 16:53
  */
 
-if (!function_exists('p')) {
-    function p($param, $flag = 0)
-    {
-        echo '<pre>';
-        print_r($param);
-        echo '</pre>';
-        if ($flag) {
-            die;
-        }
-    }
-}
-
 /**
  * 变量友好化打印输出
  * @param variable $param 可变参数
@@ -160,4 +148,53 @@ function escape($input, $urldecode = 0)
 
     if (substr($input, -1, 1) == '\\') $input = $input . "'";//$input=substr($input,0,strlen($input)-1);
     return $input;
+}
+
+if (!function_exists('get_upload_file_type_conf')) {
+    /**
+     * 获取文件类型map
+     * @return array
+     */
+    function get_upload_file_type_conf()
+    {
+        return array(
+            "rar" => "rar",
+            "zip" => "zip",
+            "docx" => "docx",
+            "doc" => "doc",
+            "xlsx" => "xlsx",
+            "xls" => "xls",
+            "png" => "png",
+            "pdf" => "pdf",
+            "txt" => "txt",
+            "jpg" => "jpg",
+            "gif" => "gif",
+            "mp4" => "mp4",
+            "wma" => "wma",
+            "rmba" => "rmba",
+            "JPEG" => "JPEG",
+            "EXIF" => "EXIF",
+            "jpeg" => "jpeg",
+            "PNG" => "PNG",
+            "JPG" => "JPG",
+            "psd" => "psd",
+            "PSD" => "PSD"
+        );
+    }
+}
+
+function succ($data){
+    $data = [
+        'code' => 1,
+        'info' => $data
+    ];
+    return json_encode($data);
+}
+
+function err($data){
+    $data = [
+        'code' => 0,
+        'info' => $data
+    ];
+    return json_encode($data);
 }

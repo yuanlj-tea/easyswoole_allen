@@ -1,0 +1,66 @@
+@charset "utf-8";
+/* CSS Document */
+
+body{font-size:14px;color:#777;font-family:'Microsoft YaHei','SimHei';}
+html,body{height:100%;}
+*{margin:0;padding:0;box-sizing: border-box;-webkit-box-sizing: border-box;-moz-box-sizing: border-box;}
+a,a:link,a:hover,a:active,a:visited{text-decoration:none;}
+.mainWrap{
+	width: 100%;
+	min-height: 100%;
+	margin: 0 auto;
+	position: relative;
+}
+.mainIcon{
+	background: url(../images/maintain/unfindICon.png) no-repeat;
+	background-size:100% 100%;
+	height:126px;
+	width:341px;
+	margin: 0 auto;
+}
+.mainbg{
+	background: url(../images/maintain/unfindBg.png) no-repeat;
+	background-size:100% 100%;
+	width: 964px;
+	height: 300px;
+	position: absolute;
+	bottom: 0px;left: 50%;
+	margin-left: -482px;
+	
+}
+.operMain{
+	margin: 0px auto;
+	text-align: center;
+	padding-top:150px;height: 100%;
+	min-height: 100%;
+	padding-bottom: 320px;
+	min-height: 300px;
+}
+.mainTip{
+	color: #33a4e6;
+	font-size: 20px;
+	margin: 20px auto;
+	font-weight: bold;
+	
+}
+.jumpUrl{margin: 20px auto 30px auto;}
+.timeSet{
+	color: #43c6fe;
+	margin-right: 5px;
+}
+.clickHere{
+	color: #43c6fe;
+	margin-left: 5px;
+	text-decoration: underline !important;
+}
+.returnIndex{
+	border: 1px solid #33a4e6;
+	border-radius: 20px;
+	-moz-border-radius:20px;
+	-ms-border-radius: 20px;
+	-o-border-radius: 20px;
+	-webkit-border-radius: 20px;
+	color: #33a4e6;
+	width: 115px;
+	padding: 10px 30px;
+}

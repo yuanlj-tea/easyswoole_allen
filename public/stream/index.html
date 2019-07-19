@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="/dist/component/stream_upload/css/stream-v1.css" />
+    <link rel="stylesheet" type="text/css" href="/dist/css/stream/index.css" />
+</head>
+<body>
+    <div>
+        <div class="clearfix">
+            <div class="fl KY-sub-titleName">
+                <i></i>
+                <u>导入文件</u>
+            </div>
+        </div>
+        <div class="KY-item-wrap">
+            <div class="stream-main-body">
+                <div id="stream-select-files">
+                    <div class="stream-upload-icon"></div>
+                </div>
+                <div id="stream_files_queue"></div>
+                <div class="clearfix">
+                    <a href="javascript:;" class="fl stream-primary-btn" nt="start-btn">开始上传</a>
+                    <a href="javascript:;" class="fl stream-secondary-btn" nt="stop-btn">停止上传</a>
+                    <a href="javascript:;" class="fr stream-secondary-btn" nt="cancel-btn">取消</a>
+                </div>
+                <p class="stream-text-wrap">Messages:</p>
+                <div id="stream_message_container" class="stream-main-upload-box"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="text/javascript" src="/dist/component/stream_upload/js/stream-v1.js"></script>
+    <!--<script type="text/javascript" src="/dist/js/stream/index.js"></script>-->
+    <script type="text/javascript">
+        var config = {
+            browseFileId : 'stream-select-files', /** 选择文件的ID, 默认: i_select_files */
+            browseFileBtn : '<div>请选择文件</div>', /** 显示选择文件的样式, 默认: `<div>请选择文件</div>` */
+            dragAndDropArea: 'stream-select-files', /** 拖拽上传区域，Id（字符类型"i_select_files"）或者DOM对象, 默认: `i_select_files` */
+            dragAndDropTips: '<span>把文件(文件夹)拖拽到这里</span>', /** 拖拽提示, 默认: `<span>把文件(文件夹)拖拽到这里</span>` */
+            filesQueueId : 'stream_files_queue', /** 文件上传容器的ID, 默认: i_stream_files_queue */
+            filesQueueHeight : 200, /** 文件上传容器的高度（px）, 默认: 450 */
+            messagerId : 'stream_message_container', /** 消息显示容器的ID, 默认: i_stream_message_container */
+            multipleFiles: true, /** 多个文件一起上传, 默认: false */
+            autoUploading: true, /** 选择文件后是否自动上传, 默认: true */
+    //		autoRemoveCompleted : true, /** 是否自动删除容器中已上传完毕的文件, 默认: false */
+    //		maxSize: 104857600//, /** 单个文件的最大大小，默认:2G */
+    //		retryCount : 5, /** HTML5上传失败的重试次数 */
+            postVarsPerFile : {}, /** 上传文件时传入的参数，默认: {} */
+            // swfURL : "swf/FlashUploader.swf", /** SWF文件的位置 */
+            tokenURL : '/stream/tk', /** 根据文件名、大小等信息获取Token的URI（用于生成断点续传、跨域的令牌） */
+            // frmUploadURL : "/stream/fd", /** Flash上传的URI */
+            uploadURL : '/stream/up', /** HTML5上传的URI */
+    //		simLimit: 200, /** 单次最大上传文件个数 */
+            // extFilters: ['.doc', '.docx', '.xlsx', '.xls', '.png', '.pdf', '.txt', '.jpg', '.jpeg', '.psd', '.zip', '.rar'], /** 允许的文件扩展名, 默认: [] */
+    //		onSelect: function(list) {alert('onSelect')}, /** 选择文件后的响应事件 */
+    //		onMaxSizeExceed: function(size, limited, name) {alert('onMaxSizeExceed')}, /** 文件大小超出的响应事件 */
+    //		onFileCountExceed: function(selected, limit) {alert('onFileCountExceed')}, /** 文件数量超出的响应事件 */
+            // onExtNameMismatch: function(name, filters) {
+            //     Modal.warning({
+            //         title: '提示',
+            //         content: '文件格式错误(支持.doc .docx .xlsx .xls .png .pdf .txt .jpg .jpeg .psd格式)',
+            //         okText: '确定'
+            //     });
+            // }, /** 文件的扩展名不匹配的响应事件 */
+    //		onCancel : function(file) {alert('Canceled:  ' + file.name)}, /** 取消上传文件的响应事件 */
+            // onComplete: function(file) {console.log(222)}, /** 单个文件上传完毕的响应事件 */
+            // onQueueComplete: function() {console.log(111)}, /** 所以文件上传完毕的响应事件 */
+    //		onUploadError: function(status, msg) {alert('onUploadError')} /** 文件上传出错的响应事件 */
+        };
+        upload = new Stream(config);
+    </script>
+</body>
+</html>

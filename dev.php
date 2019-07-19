@@ -20,7 +20,8 @@ return [
             'task_worker_num' => 8,
             'task_max_request' => 1000,
             'task_enable_coroutine' => true,
-            'reload_async' => true
+            'reload_async' => true,
+            'package_max_length' => 100 * 1024 * 1024
         ],
     ],
     'TEMP_DIR' => null,
@@ -92,5 +93,6 @@ return [
             "127.0.0.1:4151",
         ],
         'nsqlookupd' => '127.0.0.1:4161'
-    ]
+    ],
+    'UPLOAD_FILE_PATH' => '/data/easyswoole-upload'
 ];
