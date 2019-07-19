@@ -4,13 +4,17 @@
 namespace App\Dispatch\Console;
 
 
+use App\Utility\Pool\MysqlPool;
+
 class TestConsole extends AbstractConsole
 {
     public static $command = 'foo:bar';
 
-    public function handle()
+    public function handle(? array $argv)
     {
-        // TODO: Implement handle() method.
+        $db = MysqlPool::defer();
+        $ret = $db->insert('user', ['name' => 'zs', 'age' => 18]);
+        pp($ret);
     }
 
 }

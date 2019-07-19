@@ -62,11 +62,12 @@ class Job
 
     public function __construct()
     {
+        $this->info('foo');
+        $this->error('bar');
+        die;
         $this->easyswoole_root = realpath(__DIR__ . '/../../');
-        $this->config = @require_once $this->easyswoole_root . '/dev.php';
-
-        global $argv;
         $this->DI = Container::getInstance();
+        global $argv;
 
         //加载console
         $registerCommand = $this->registerConsoleCommand();
@@ -80,10 +81,10 @@ class Job
         array_shift($argv);
         $argv = $this->parsingArgv($argv);
 
-
         //注册连接池
         $this->registerPool();
 
+        $this->runConsole($argv, $registerCommand);
 
         //生成数据库队列驱动表
         if (isset($argv[1]) && $argv[1] == 'gen_database') {
@@ -91,10 +92,9 @@ class Job
             return;
         }
 
-
         if (!isset($argv['driver'])) {
             echo "缺少参数或参数错误\n";
-            $this->showHelp();
+            $this->showHelp($registerCommand);
         }
 
         //方式1
@@ -132,10 +132,8 @@ class Job
             }
         } else {
             echo "缺少参数\n";
-            $this->showHelp();
+            $this->showHelp($registerCommand);
         }
-
-
     }
 
     /**
@@ -156,11 +154,11 @@ HELP;
         if (!empty($registerCommand)) {
             $promptHtml = <<<HTML
 4、已经注册的命令：\n
+
 HTML;
             echo $promptHtml;
-            // $registerCommand = ['a','b'];
-            foreach($registerCommand as $k=>$v){
-                $output = self::displayItem($k,$v)."\n";
+            foreach ($registerCommand as $k => $v) {
+                $output = self::displayItem($k, $v) . "\n";
                 echo $output;
             }
         }
@@ -171,7 +169,7 @@ HTML;
 
     static function displayItem($name, $value)
     {
-        return "\e[32m" . str_pad($name, 30, ' ', STR_PAD_RIGHT)." : " . "\e[34m" . $value . "\e[0m";
+        return "\e[32m" . str_pad($name, 30, ' ', STR_PAD_RIGHT) . " : " . "\e[34m" . $value . "\e[0m";
     }
 
     /**
@@ -302,7 +300,6 @@ HTML;
      */
     public function consumeRedis($queueName, $tries = null)
     {
-
         go(function () use ($queueName, $tries) {
             RedisPool::invoke(function (RedisObject $redis) use ($queueName, $tries) {
                 $queueArr = explode(',', $queueName);
@@ -629,15 +626,51 @@ CREATE TABLE `failed_jobs` (
         exit($exitStatus);
     }
 
+    /**
+     * 注册console command
+     * @return array
+     * @throws Exception
+     */
     public function registerConsoleCommand()
     {
         $config = require_once __DIR__ . '/Console/config.php';
         $registerCommand = [];
         foreach ($config as $k => $v) {
             $obj = $this->DI->get($v);
-            $registerCommand[$v] = $obj->getCommand();
+            $command = $obj::getCommand();
+            if (in_array($command, $registerCommand)) {
+                $this->error(sprintf("[%s] 命令已经被注册", $command));
+                die;
+            }
+            $registerCommand[$v] = $command;
         }
         return $registerCommand;
+    }
+
+    /**
+     * 运行console command
+     */
+    public function runConsole($argv, $registerCommand)
+    {
+        $flip = array_flip($registerCommand);
+        if (isset($argv['command']) && in_array($argv['command'], $registerCommand)) {
+            $obj = $this->DI->get($flip[$argv['command']]);
+            go(function () use ($obj, $argv) {
+                $obj->handle($argv);
+                die;
+            });
+            die;
+        }
+    }
+
+    public function info($info)
+    {
+        pp(sprintf("\033[0m%s", $info));
+    }
+
+    public function error($info)
+    {
+        pp(sprintf("\033[41m%s", $info));
     }
 }
 
