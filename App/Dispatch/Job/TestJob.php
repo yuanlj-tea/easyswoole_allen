@@ -53,12 +53,12 @@ class TestJob extends Dispatcher
         // echo "sleep结束\n";
 
         $db = MysqlPool::defer();
-        $db->insert('user',['name'=>'foo']);
+        // $db->insert('user',['name'=>'foo']);
         $res = $db->where('id', 1, '=')->get('user', null, '*');
         pp($res);
 
         pp('执行结束');
-        throw new \Exception("抛出异常");
+        // throw new \Exception("抛出异常");
         file_put_contents("/tmp/TestJob.log", $this->id . ':' . $this->name . ':' . print_r($this->arr, true) . PHP_EOL, FILE_APPEND);
     }
 }
