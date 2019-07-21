@@ -2,7 +2,7 @@
 
 支持自定义命令：php Job.php command=foo:bar;
 
-支持队列驱动：database、redis、rabbitmq、nsq;
+支持队列驱动：database、redis、rabbitmq、nsq、kafka;
 
 #### 2、显示帮助提示
 
