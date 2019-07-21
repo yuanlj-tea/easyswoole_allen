@@ -105,7 +105,7 @@ class Job
     public function showHelp()
     {
         $helpCode = <<<HELP
-1、支持队列驱动:redis、database、amqp、nsq
+1、支持队列驱动:redis、database、amqp、nsq、kafka
     
 2、queue具体使用参见readme:
     https://github.com/a1554610616/easyswoole_allen/blob/master/App/Dispatch/readme.md
