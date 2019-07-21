@@ -69,6 +69,17 @@ php Job.php 或 php Job.php help
 	php Job.php driver=nsq topic=test2 channel=my_channel tries=0
 ```
 
+##### 4.4、kafka驱动
+
+```php
+生产：
+	new KafkaDispatch(new TestJob(1, 'foo', ['bar']), 'test', '');
+消费：
+	php Job.php driver=kafka topic=test groupId=test
+```
+
+
+
 #### 5、说明
 
 任务类要继承\App\Dispatch\Dispatcher抽象类，实现run方法，要执行的任务逻辑写在run方法里；
