@@ -8,6 +8,7 @@
 
 namespace App\Dispatch;
 
+use App\Dispatch\DispatchHandler\KafkaDispatch;
 use App\Libs\Publisher;
 use App\Utility\Pool\AmqpObject;
 use App\Utility\Pool\AmqpPool;
@@ -100,7 +101,39 @@ abstract class Dispatcher
      * 允许设置的队列驱动
      * @var array
      */
-    private $allowDriver = ['redis', 'database', 'amqp', 'nsq'];
+    private $allowDriver = ['redis', 'database', 'amqp', 'nsq', 'kafka'];
+
+    //kafka相关配置
+    /*********************************************/
+    private $metadataRefreshIntervalMs = 10000;
+
+    private $metadataBrokerList = '127.0.0.1:9092';
+
+    private $brokerVersion = '0.10.0.0';
+
+    private $requiredAck = 1;
+
+    private $isAsyn = false;
+
+    private $produceInterval = 500;
+
+    protected static $kafkaTopic;
+
+    protected static $kafkaKey;
+
+    /*********************************************/
+
+    public function setKafkatopic($topic)
+    {
+        static::$kafkaTopic = $topic;
+        return $this;
+    }
+
+    public function setKafkaKey($key)
+    {
+        static::$kafkaKey = $key;
+        return $this;
+    }
 
     /**
      * 获取重试次数
@@ -118,8 +151,9 @@ abstract class Dispatcher
      */
     public function setQueueDriver(string $driver)
     {
-        if (!in_array($driver, $this->allowDriver))
+        if (!in_array($driver, $this->allowDriver)) {
             throw new \Exception("无效的队列驱动");
+        }
         static::$queueDriver = $driver;
         return $this;
     }
@@ -272,17 +306,15 @@ abstract class Dispatcher
             $delay = $dispatcher->getDelay();
 
             //存入队列的数据
-            $queueData['class_name'] = Static::class;
+            $queueData['class_name'] = static::class;
             $queueData['param'] = [];  //构造函数的参数
             $queueData['add_time'] = time();
             $queueData['delay'] = $delay;
 
             $ref = new \ReflectionClass(Static::class);
-
             $constructor = $ref->getConstructor();
             if ($constructor != null) { //如果有构造函数
                 $constructorParam = $constructor->getParameters();
-
                 if (!empty($constructorParam)) { //如果构造函数中有参数
                     foreach ($constructorParam as $k => $v) {
                         $paramName = $v->name;
@@ -308,17 +340,6 @@ abstract class Dispatcher
                     });
                     break;
                 case $this->amqp:
-                    //连接池
-                    /*AmqpPool::invoke(function (AmqpObject $amqp) use ($amqpType, $amqpExchange, $amqpQueue, $amqpRouteKey, $queueJson) {
-                        $channel = $amqp->channel();
-
-                        $channel->exchange_declare($amqpExchange, $amqpType, false, true, false);
-                        $channel->queue_declare($amqpQueue, false, true, false, false);
-
-                        $msg = new AMQPMessage($queueJson);
-                        $channel->basic_publish($msg, $amqpExchange, $amqpRouteKey);
-                    });*/
-
                     $amqpConf = Config::getInstance()->getConf('AMQP');
                     if ($delay > 0) {
                         Timer::getInstance()->after($delay * 1000, function () use ($amqpExchange, $amqpQueue, $amqpRouteKey, $amqpType, $amqpConf, $queueJson) {
@@ -359,6 +380,23 @@ abstract class Dispatcher
                         var_dump($e);
                     }
                     break;
+                case 'kafka':
+                    $config = \Kafka\ProducerConfig::getInstance();
+                    $config->setMetadataRefreshIntervalMs($this->metadataRefreshIntervalMs);
+                    $config->setMetadataBrokerList($this->metadataBrokerList);
+                    $config->setBrokerVersion($this->brokerVersion);
+                    $config->setRequiredAck($this->requiredAck);
+                    $config->setIsAsyn($this->isAsyn);
+                    $config->setProduceInterval($this->produceInterval);
+
+                    $topic = static::$kafkaTopic;
+                    $key = static::$kafkaKey;
+                    $producer = new \Kafka\Producer();
+
+                    $data = KafkaDispatch::buildData($topic, $queueJson, $key);
+                    $result = $producer->send([$data]);
+                    pp($result);
+                    break;
                 default:
                     throw new \Exception('不支持的队列驱动：' . $driver);
             }
@@ -368,6 +406,5 @@ abstract class Dispatcher
                 pp(sprintf("[FILE] %s || [LINE] %s || [MSG] %s", $e->getFile(), $e->getLine(), $e->getMessage()))
             );
         }
-
     }
 }

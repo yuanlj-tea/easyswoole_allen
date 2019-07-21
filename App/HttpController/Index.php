@@ -10,6 +10,7 @@ namespace App\HttpController;
 
 use App\Container\Container;
 use App\Dispatch\DispatchHandler\AmqpDispatch;
+use App\Dispatch\DispatchHandler\KafkaDispatch;
 use App\Dispatch\DispatchHandler\MysqlDispatch;
 use App\Dispatch\DispatchHandler\NsqDispatch;
 use App\Dispatch\DispatchHandler\RedisDispatch;
@@ -38,39 +39,7 @@ class Index extends AbstractController
 {
     public function index()
     {
-        $ips = swoole_get_local_ip();
-        pp($ips);
-        $this->writeJson(200, 'ok');
-        /*RedisPool::invoke(function (RedisObject $redis){
-            $key = 'user:1:api_count';
-            $limit = 1;
-
-            $check = $redis->exists($key);
-            if($check){
-                $redis->incr($key);
-                $count = $redis->get($key);
-                if($count>$limit){
-                    pp('访问太过频繁');
-                    return;
-                }
-            }else{
-                $redis->incr($key);
-                $redis->expire($key,2);
-            }
-
-            $count = $redis->get($key);
-            pp("访问成功,count：{$count}");
-        });*/
-
-
-        /*$request = $this->request();
-        $response = $this->response();
-
-        TaskManager::async(function (){
-            pp("异步任务");
-        });
-
-        $this->writeJson(200, 'hello world');*/
+        $this->writeJson(200, 'hello world');
     }
 
     /**
@@ -79,52 +48,6 @@ class Index extends AbstractController
     public function getCsrfToken()
     {
         $this->writeJson(200, $this->session()->get('csrf_token'));
-    }
-
-    public function testSaber()
-    {
-        [$html] = SaberGM::list([
-            'uri' => [
-                'http://www.blog.com/sso/server/login'
-            ]
-        ]);
-        var_dump($html->getParsedDomObject()->getElementsByTagName('button')->item(0)->getAttribute('id'));
-        // var_dump($html->getParsedHtml()->getElementsByTagName('input')->item(0)->textContent);
-        $this->response()->write('ok');
-        return;
-        [$json, $xml, $html] = SaberGM::list([
-            'uri' => [
-                'http://httpbin.org/get',
-                'http://www.w3school.com.cn/example/xmle/note.xml',
-                'http://httpbin.org/html'
-            ]
-        ]);
-        var_dump($json->getParsedJson());
-        var_dump($json->getParsedJsonObject());
-        var_dump($xml->getParsedXml());
-        var_dump($html->getParsedHtml()->getElementsByTagName('h1')->item(0)->textContent);
-        //测试自动登录
-        $session = Saber::session([
-            'base_uri' => 'http://www.blog.com',
-            'redirect' => 0
-        ]);
-        $session->post('/sso/server/test');
-        $res = $session->get('/sso/server/test');
-        echo $res->body;
-        $this->response()->write($res->body);
-
-        /*$session = Saber::session([
-            'base_uri' => 'http://www.blog.com',
-            'redirect' => 0
-        ]);
-        $redirect_url = base64_encode('hehe');
-        $res=$session->post('/sso/server/login?redirect_url='.$redirect_url,['user'=>'demo','pwd'=>'demo']);
-
-        echo $res->body;
-
-        $getRes = $session->get('/sso/server/login')->body;
-        echo $getRes;*/
-
     }
 
     public function upload()
@@ -146,6 +69,30 @@ class Index extends AbstractController
             ValidateCsrfToken::class,
         ];
         return parent::onRequest($action);
+    }
+
+    public function rateLimit()
+    {
+        RedisPool::invoke(function (RedisObject $redis) {
+            $key = 'user:1:api_count';
+            $limit = 1;
+
+            $check = $redis->exists($key);
+            if ($check) {
+                $redis->incr($key);
+                $count = $redis->get($key);
+                if ($count > $limit) {
+                    pp('访问太过频繁');
+                    return;
+                }
+            } else {
+                $redis->incr($key);
+                $redis->expire($key, 2);
+            }
+
+            $count = $redis->get($key);
+            pp("访问成功,count：{$count}");
+        });
     }
 
     /**
@@ -214,14 +161,16 @@ class Index extends AbstractController
 
     public function testMysqlQueue()
     {
-        //对应consume:php Job.php driver=database queue=queue tries=0
-        new MysqlDispatch(new TestJob(1,'foo',['bar']),'queue');
+        //对应consume:
+        //php Job.php driver=database queue=queue tries=0
+        new MysqlDispatch(new TestJob(1, 'foo', ['bar']), 'queue');
         $this->writeJson(200, 'ok');
     }
 
     public function testRedisQueue()
     {
-        //对应consume:php Job.php driver=redis queue=queue tries=0
+        //对应consume:
+        //php Job.php driver=redis queue=queue tries=0
         new RedisDispatch(new TestJob(1, 'foo', ['bar']), 'queue');
         $this->writeJson(200, 'ok');
     }
@@ -229,6 +178,7 @@ class Index extends AbstractController
     public function testAmqpTopic()
     {
         //topic 主题订阅
+        //topic：对 key 进行模式匹配，比如 ab* 可以传递到所有 ab* 的 queue
         //对应consume:php Job.php driver=amqp type=topic exchange=topic_logs queue= route_key=*.laravel tries=0
         // $exchangeName = 'topic_logs';
         // $queueName = '';
@@ -236,6 +186,7 @@ class Index extends AbstractController
         // $type = AMQP_EX_TYPE_TOPIC;
 
         //fanout pub/sub
+        //fanout：会向相应的 queue 广播
         //对应consume:php Job.php driver=amqp type=fanout exchange=logs queue= route_key=test tries=0
         // $exchangeName = 'logs';
         // $queueName = '';
@@ -243,6 +194,7 @@ class Index extends AbstractController
         // $type = AMQP_EX_TYPE_FANOUT;
 
         //direct 一对一,一对多
+        //direct：如果 routing key 匹配，那么 Message 就会被传递到相应的 queue
         //对应consume:php Job.php driver=amqp type=direct exchange=direct_logs queue=queue route_key=test tries=0
         $exchangeName = 'direct_logs';
         $queueName = 'queue';
@@ -257,7 +209,7 @@ class Index extends AbstractController
     {
         //对应consume:php Job.php driver=nsq topic=test2 channel=my_channel tries=0
         $topic = 'test2';
-        new NsqDispatch(new TestJob(1,'foo',['bar']),$topic);
+        new NsqDispatch(new TestJob(1, 'foo', ['bar']), $topic);
         $this->writeJson(200, 'ok');
         //及时发布
         // $topic = 'test';
@@ -281,8 +233,18 @@ class Index extends AbstractController
         // var_dump($result);
     }
 
-    private $inventoryQueue = 'inventory_queue'; //库存队列
-    private $purchaseQueue = 'purchase_queue'; //抢购队列
+    public function kafkaProduce()
+    {
+        //对应consume:
+        //php Job.php driver=kafka topic=test groupId=test
+        new KafkaDispatch(new TestJob(1, 'foo', ['bar']), 'test', '');
+        $this->writeJson(200, 'ok');
+    }
+
+    //库存队列
+    private $inventoryQueue = 'inventory_queue';
+    //抢购队列
+    private $purchaseQueue = 'purchase_queue';
 
     public function order()
     {

@@ -9,6 +9,7 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
     public static $files = array (
         '253c157292f75eb38082b5acb06f3f01' => __DIR__ . '/..' . '/nikic/fast-route/src/functions.php',
         'bd9634f2d41831496de0d3dfe4c94881' => __DIR__ . '/..' . '/symfony/polyfill-php56/bootstrap.php',
+        'e8aa6e4b5a1db2f56ae794f1505391a8' => __DIR__ . '/..' . '/amphp/amp/lib/functions.php',
         '045cd5d476702c3529ef3e1b9f615e70' => __DIR__ . '/..' . '/swlib/http/src/functions.php',
         '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => __DIR__ . '/..' . '/swlib/saber/src/include/functions.php',
         'd0dca54c1bcbed938a539389e43e6364' => __DIR__ . '/../..' . '/App/helpers.php',
@@ -68,6 +69,7 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         'A' => 
         array (
             'App\\' => 4,
+            'Amp\\' => 4,
         ),
     );
 
@@ -192,6 +194,20 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         array (
             0 => __DIR__ . '/../..' . '/App',
         ),
+        'Amp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/amphp/amp/lib',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'K' => 
+        array (
+            'Kafka\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/nmred/kafka-php/src',
+            ),
+        ),
     );
 
     public static $classMap = array (
@@ -204,6 +220,7 @@ class ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$prefixesPsr0;
             $loader->classMap = ComposerStaticInit49fc59fd1735e0aa6997338baf11daf7::$classMap;
 
         }, null, ClassLoader::class);

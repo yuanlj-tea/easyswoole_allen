@@ -10,6 +10,8 @@ class TestConsole extends AbstractConsole
 {
     public static $command = 'foo:bar';
 
+    public static $desc = '测试console';
+
     public function handle(? array $argv)
     {
         $db = MysqlPool::defer();

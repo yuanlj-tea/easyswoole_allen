@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     '253c157292f75eb38082b5acb06f3f01' => $vendorDir . '/nikic/fast-route/src/functions.php',
     'bd9634f2d41831496de0d3dfe4c94881' => $vendorDir . '/symfony/polyfill-php56/bootstrap.php',
+    'e8aa6e4b5a1db2f56ae794f1505391a8' => $vendorDir . '/amphp/amp/lib/functions.php',
     '045cd5d476702c3529ef3e1b9f615e70' => $vendorDir . '/swlib/http/src/functions.php',
     '3a6b4a1bc7c69c0620b4ef88fb5d27d0' => $vendorDir . '/swlib/saber/src/include/functions.php',
     'd0dca54c1bcbed938a539389e43e6364' => $baseDir . '/App/helpers.php',

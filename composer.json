@@ -9,7 +9,8 @@
         "php-amqplib/php-amqplib": "^2.9",
         "moolex/nsqclient": "^0.1.1",
         "easyswoole/actor": "2.x-dev",
-        "easyswoole/socket": "^1.1"
+        "easyswoole/socket": "^1.1",
+        "nmred/kafka-php": "v0.2.0.8"
     },
     "autoload": {
         "psr-4": {
@@ -22,7 +23,7 @@
     "repositories": {
         "packagist": {
             "type": "composer",
-            "url": "https://packagist.laravel-china.org"
+            "url": "https://mirrors.aliyun.com/composer/"
         }
     }
 }

@@ -19,7 +19,7 @@ class TestJob extends Dispatcher
      * 重试次数
      * @var int
      */
-    protected $tries = 5;
+    protected $tries = 0;
 
     /**
      * 指定队列驱动
@@ -47,20 +47,18 @@ class TestJob extends Dispatcher
 
     public function run()
     {
-        echo "执行了\n";
+        pp('开始执行');
 
         // \co::sleep(5);
         // echo "sleep结束\n";
 
-        MysqlPool::invoke(function (MysqlObject $db) {
-            // $res = $db->where('id', 1, '=')->get('tp_article', null, '*');
-            $res = $db->where('id', 1, '=')->get('test', null, '*');
-            pp($res);
-        });
+        $db = MysqlPool::defer();
+        $db->insert('user',['name'=>'foo']);
+        $res = $db->where('id', 1, '=')->get('user', null, '*');
+        pp($res);
 
-        echo "执行结束\n";
-
-        // throw new \Exception("抛出异常");
+        pp('执行结束');
+        throw new \Exception("抛出异常");
         file_put_contents("/tmp/TestJob.log", $this->id . ':' . $this->name . ':' . print_r($this->arr, true) . PHP_EOL, FILE_APPEND);
     }
 }

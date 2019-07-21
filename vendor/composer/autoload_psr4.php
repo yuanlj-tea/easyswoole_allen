@@ -36,4 +36,5 @@ return array(
     'EasySwoole\\Actor\\' => array($vendorDir . '/easyswoole/actor/src'),
     'Cron\\' => array($vendorDir . '/dragonmantank/cron-expression/src/Cron'),
     'App\\' => array($baseDir . '/App'),
+    'Amp\\' => array($vendorDir . '/amphp/amp/lib'),
 );
