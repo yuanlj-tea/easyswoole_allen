@@ -113,7 +113,6 @@ class RedisConsume extends Consume
                                         go(function () use ($obj, $queueName, $queueData) {
                                             try {
                                                 $obj->run();
-                                                // $chanel->push(null);
                                             } catch (\Exception $e) {
                                                 echo "异常:{$e->getMessage()},扔进channel\n";
                                                 // $chanel->push(['queue_name' => $queueName, 'queue_data' => $queueData]);
@@ -129,7 +128,7 @@ class RedisConsume extends Consume
                                 }
                             }
                         } else {
-                            sleep(1);
+                            \co::sleep(1);
                         }
                     }
                 }
