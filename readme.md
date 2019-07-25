@@ -1,4 +1,4 @@
-#### 基于easyswoole框架实现的服务端可配置多台服务器的聊天室
+#### 1、基于easyswoole框架实现的服务端可配置多台服务器的聊天室
 
 ##### 1、配置前端目录的虚拟主机(废弃)
 
@@ -32,4 +32,16 @@ php easyswoole start produce
 
 ##### 5、访问
 
-> 访问如上2中的虚拟主机域名，如192.168.79.206:8082/index.html
+```php
+访问如上2中的虚拟主机域名，如192.168.79.206:8082/index.html
+```
+
+------
+
+#### 2、database、redis、kafka、rabbitmq、nsq统一生产消费&easyswoole自定义command
+
+https://github.com/longjieYuan/easyswoole_allen/tree/master/App/Dispatch
+
+#### 3、基于actor模式实现的聊天室
+
+https://github.com/longjieYuan/easyswoole_allen/tree/actor_chat
