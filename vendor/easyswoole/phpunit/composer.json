@@ -1,0 +1,22 @@
+{
+    "name": "easyswoole/phpunit",
+    "type": "library",
+    "description": "An efficient swoole framework",
+    "keywords" : ["swoole", "framework", "async","easyswoole"],
+    "homepage" : "https://www.easyswoole.com/",
+    "license" : "Apache-2.0",
+    "authors": [
+        {
+            "name": "YF",
+            "email": "291323003@qq.com"
+        }
+    ],
+    "require": {
+        "phpunit/phpunit": "^7.5",
+        "ext-swoole": "^4.4.0"
+    },
+    "bin": [
+        "bin/co-phpunit"
+    ]
+
+}

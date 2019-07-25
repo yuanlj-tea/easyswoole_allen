@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: yf
+ * Date: 2019-01-06
+ * Time: 21:49
+ */
+
+use PHPUnit\TextUI\Command;
+use Swoole\Coroutine\Scheduler;
+use Swoole\Timer;
+
+require_once getcwd().'/vendor/autoload.php';
+/*
+ * 允许自动的执行一些初始化操作，只初始化一次
+ */
+if(file_exists(getcwd().'/phpunit.php')){
+    require_once getcwd().'/phpunit.php';
+}
+$scheduler = new Scheduler();
+$scheduler->add(function() {
+    try{
+        PHPUnit\TextUI\Command::main(false);
+    }catch (\Throwable $throwable){
+        /*
+         * 屏蔽swoole exit报错
+         */
+        if(!$throwable instanceof Swoole\ExitException){
+            trigger_error("{$throwable->getMessage()} at file {$throwable->getFile()} line {$throwable->getLine()}");
+        }
+    }
+    Timer::clearAll();
+});
+$scheduler->start();
