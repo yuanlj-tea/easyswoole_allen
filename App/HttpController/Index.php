@@ -66,7 +66,6 @@ class Index extends AbstractController
         //要继承的中间件
         $this->middleware = [
             CorsMiddleware::class,
-            ValidateCsrfToken::class,
         ];
         return parent::onRequest($action);
     }
