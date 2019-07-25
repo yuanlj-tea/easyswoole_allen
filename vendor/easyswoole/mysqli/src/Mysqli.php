@@ -9,6 +9,7 @@
 namespace EasySwoole\Mysqli;
 
 use EasySwoole\Mysqli\Exceptions\ConnectFail;
+use EasySwoole\Mysqli\Exceptions\Exception;
 use EasySwoole\Mysqli\Exceptions\JoinFail;
 use EasySwoole\Mysqli\Exceptions\Option;
 use EasySwoole\Mysqli\Exceptions\OrderByFail;
@@ -63,6 +64,7 @@ class Mysqli
      * 事务配置项
      */
     private $startTransaction = false;
+    private $transactionLevel = 0;  // 当前的事务层级
 
     /*
      * fetch_mode模式时
@@ -220,6 +222,64 @@ class Mysqli
             $this->resetDbStatus();
         }
         return $res;
+    }
+
+    /**
+     * 使用计数器开启嵌套事务
+     * @param bool $resetLevel
+     * @throws ConnectFail
+     * @throws \Throwable
+     */
+    public function startTransactionWithCount($resetLevel = false)
+    {
+        // 强制结束上次事务并重开
+        if ($resetLevel) {
+            $this->transactionLevel = 0;
+            $this->rollback();
+            $this->commit();
+        }
+
+        if ($this->transactionLevel == 0) {
+            $this->startTransaction();
+        } else {
+            $this->transactionLevel++;
+        }
+    }
+
+
+    function resetTransactionLevel()
+    {
+        $this->transactionLevel = 0;
+        return $this;
+    }
+
+    /**
+     * 嵌套事务提交
+     * 只有在最外层才会进行真实提交
+     * @throws ConnectFail
+     */
+    public function commitWithCount()
+    {
+        if ($this->transactionLevel == 0) {
+            $this->commit();
+        } else {
+            $this->transactionLevel--;
+        }
+    }
+
+    /**
+     * 回滚嵌套事务
+     * 只有在最外层才会进行真实回滚
+     * @param bool $commit
+     * @throws ConnectFail
+     */
+    public function rollbackWithCount($commit = true)
+    {
+        if ($this->transactionLevel == 0) {
+            $this->rollback($commit);
+        } else {
+            $this->transactionLevel--;
+        }
     }
 
     /**
@@ -958,7 +1018,7 @@ class Mysqli
      * 返回结果总数
      * @return int
      */
-    public function getTotalCount(): int
+    public function getTotalCount():? int
     {
         return $this->totalCount;
     }
@@ -967,7 +1027,7 @@ class Mysqli
      * 本次查询影响的行数
      * @return int
      */
-    public function getAffectRows(): int
+    public function getAffectRows():? int
     {
         return $this->affectRows;
     }
@@ -1080,6 +1140,9 @@ class Mysqli
         $this->stmtErrno = $stmt->errno;
         $this->affectRows = $stmt->affected_rows;
         $this->totalCount = 0;
+        if($this->stmtErrno && $this->config->isErrorToException()){
+            throw new Exception("{$this->stmtError}");
+        }
         if (in_array('SQL_CALC_FOUND_ROWS', $this->queryOptions)) {
             $hitCount = $this->coroutineMysqlClient->query('SELECT FOUND_ROWS() as count');
             $this->totalCount = $hitCount[0]['count'];

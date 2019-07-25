@@ -9,6 +9,7 @@
 namespace Swlib\Http;
 
 use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\UriInterface;
 
 /**
  * Class Message
@@ -21,6 +22,8 @@ class Message implements MessageInterface
 
     /**@var string */
     protected $protocolVersion = '1.1';
+    /**@var Uri */
+    protected $uri;
     /**@var [][]string */
     protected $headerNames = [];
     protected $headers = [];
@@ -50,6 +53,23 @@ class Message implements MessageInterface
             return $this;
         }
         $this->protocolVersion = $version;
+
+        return $this;
+    }
+
+    public function getUri(): ?UriInterface
+    {
+        return $this->uri;
+    }
+
+    /**
+     * @param UriInterface|null $uri
+     * @param bool $preserveHost
+     * @return $this
+     */
+    public function withUri(?UriInterface $uri, $preserveHost = false)
+    {
+        $this->uri = $uri;
 
         return $this;
     }
@@ -214,9 +234,17 @@ class Message implements MessageInterface
     }
 
     /**
-     * @return null|\Psr\Http\Message\StreamInterface|StreamInterface
+     * @return int if empty 0 else bodySize
      */
-    public function getBody(): ?\Psr\Http\Message\StreamInterface
+    public function hasBody(): int
+    {
+        return $this->body ? $this->body->getSize() : 0;
+    }
+
+    /**
+     * @return \Psr\Http\Message\StreamInterface|StreamInterface
+     */
+    public function getBody(): \Psr\Http\Message\StreamInterface
     {
         if (!isset($this->body)) {
             $this->body = stream_for('');

@@ -67,6 +67,12 @@ class SplBeanTest extends TestCase
         $this->assertTrue($result['orderId'] === 1 && $result['name'] === 'order' && count(array_diff($goodItem, $good)) === 0 && count(array_diff($good, $goodItem)) === 0);
     }
 
+    function testArrayToBeanOne() {
+        $good = ['goodId' => 12, 'goodName' => 'apple', 'price' => 12, 'number' => 4];
+        $bean = new AppleBean($good);
+        $this->assertTrue(!empty($bean->getName()) && $bean->getName() === $good['goodName']);
+    }
+
     function testToArrayWithMappingOne() {
         $data = ['goodId' => 12, 'name' => 'apple', 'price' => 12, 'number' => 4, 'age' => 12];
         $bean = new AppleBean($data);

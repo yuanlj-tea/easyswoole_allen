@@ -7,6 +7,7 @@
 
 namespace Swlib\Http\Exception;
 
+use Exception;
 use Swlib\Http\Request;
 use Swlib\Http\Response;
 
@@ -23,10 +24,11 @@ class RequestException extends TransferException
         ?Response $response,
         int $code = 0,
         string $message = 'Unknown failed',
-        \Exception $previous = null
+        Exception $previous = null
     ) {
         $code = $code ? $code : ($response ? $response->getStatusCode() : 0);
-        parent::__construct($message, $code, $previous);
+        $phrase = $response ? $response->getReasonPhrase() : 'Unknown';
+        parent::__construct("HTTP {$code} {$phrase}: {$message}", $code, $previous);
         $this->request = $request;
         $this->response = $response;
     }

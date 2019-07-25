@@ -8,6 +8,7 @@
 
 namespace Swlib\Http;
 
+use InvalidArgumentException;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Psr\Http\Message\UriInterface;
@@ -15,8 +16,6 @@ use Psr\Http\Message\UriInterface;
 class Request extends Message implements RequestInterface
 {
 
-    /**@var Uri */
-    protected $uri;
     protected $method;
     protected $requestTarget;
 
@@ -59,7 +58,7 @@ class Request extends Message implements RequestInterface
     public function withRequestTarget($requestTarget): self
     {
         if (preg_match('/\s/', $requestTarget)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Invalid request target provided; cannot contain whitespace'
             );
         }
@@ -84,14 +83,9 @@ class Request extends Message implements RequestInterface
         return $this;
     }
 
-    public function getUri(): ?UriInterface
-    {
-        return $this->uri;
-    }
-
     /**
-     * @param Uri $uri
-     * @param bool $autoHost
+     * @param UriInterface|null $uri
+     * @param bool $preserveHost
      * @return $this
      */
     public function withUri(?UriInterface $uri, $preserveHost = false): self
@@ -271,11 +265,11 @@ class Request extends Message implements RequestInterface
 
     public function __toString()
     {
-        $req = trim($this->getMethod() . ' ' . $this->getRequestTarget()) . ' HTTP/' . $this->getProtocolVersion();
+        $req = trim("{$this->getMethod()} {$this->getRequestTarget()}") . " HTTP/{$this->getProtocolVersion()}\r\n";
         if (!$this->hasHeader('host')) {
-            $req .= "\r\nHost: " . $this->getUri()->getHost();
+            $req .= "Host: {$this->getUri()->getHost()}\r\n";
         }
-        $req .= $this->getHeadersString() . "\r\n\r\n" . $this->getBody();
+        $req .= "{$this->getHeadersString()}\r\n\r\n" . ($this->hasBody() ? $this->getBody() : '');
 
         return $req;
     }
