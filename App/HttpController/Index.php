@@ -23,6 +23,7 @@ use App\Utility\Pool\AmqpObject;
 use App\Utility\Pool\AmqpPool;
 use App\Utility\Pool\RedisObject;
 use App\Utility\Pool\RedisPool;
+use EasySwoole\AtomicLimit\AtomicLimit;
 use EasySwoole\Component\Di;
 use EasySwoole\EasySwoole\Config;
 use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
@@ -158,7 +159,7 @@ class Index extends AbstractController
 
     }
 
-    public function testMysqlQueue()
+    public function mysqlProduce()
     {
         //对应consume:
         //php Job.php driver=database queue=queue tries=0
@@ -166,7 +167,7 @@ class Index extends AbstractController
         $this->writeJson(200, 'ok');
     }
 
-    public function testRedisQueue()
+    public function redisProduce()
     {
         //对应consume:
         //php Job.php driver=redis queue=queue tries=0
@@ -174,7 +175,7 @@ class Index extends AbstractController
         $this->writeJson(200, 'ok');
     }
 
-    public function testAmqpTopic()
+    public function amqpProduce()
     {
         //topic 主题订阅
         //topic：对 key 进行模式匹配，比如 ab* 可以传递到所有 ab* 的 queue
@@ -204,7 +205,7 @@ class Index extends AbstractController
         $this->writeJson(200, 'ok');
     }
 
-    public function testNsq()
+    public function nsqProduce()
     {
         //对应consume:php Job.php driver=nsq topic=test2 channel=my_channel tries=0
         $topic = 'test2';
@@ -297,6 +298,40 @@ class Index extends AbstractController
             return 't2 result';
         });
 
-        var_dump($csp->exec());
+        pp($csp->exec());
+    }
+
+    public function testWaitGroup()
+    {
+        $ret = [];
+
+        $wait = new \EasySwoole\Component\WaitGroup();
+
+        $wait->add();
+        go(function ()use($wait,&$ret){
+            \co::sleep(0.1);
+            $ret[] = time();
+            $wait->done();
+        });
+
+        $wait->add();
+        go(function ()use($wait,&$ret){
+            \co::sleep(2);
+            $ret[] = time();
+            $wait->done();
+        });
+
+        $wait->wait();
+
+        pp($ret);
+    }
+
+    public function testAtomicLimit()
+    {
+        if(AtomicLimit::isAllow('api')){
+            pp('succ');
+        }else{
+            pp('请求频繁');
+        }
     }
 }

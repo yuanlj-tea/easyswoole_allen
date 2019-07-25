@@ -21,6 +21,7 @@ use App\Utility\Pool\Predis\PredisPool;
 use App\Utility\Pool\RedisPool;
 use App\WebSocket\WebSocketEvent;
 use App\WebSocket\WebSocketParser;
+use EasySwoole\AtomicLimit\AtomicLimit;
 use EasySwoole\Component\Di;
 use EasySwoole\Component\Pool\PoolManager;
 use EasySwoole\EasySwoole\Swoole\EventRegister;
@@ -70,14 +71,14 @@ class EasySwooleEvent implements Event
         $serverType = $conf->getConf('MAIN_SERVER.SERVER_TYPE');
 
         //注册onWorkerStart回调事件
-        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use($serverType){
+        $register->add($register::onWorkerStart, function (\swoole_server $server, int $workerId) use ($serverType) {
             //在每个worker进程启动的时候，预创建redis连接池
             if ($server->taskworker == false) {
                 //预创建数量,必须小于连接池最大数量
                 PoolManager::getInstance()->getPool(RedisPool::class)->preLoad(6);
             }
             // pp("worker:{$workerId} start");
-            if($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER){
+            if ($workerId == 0 && $serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
                 //清理聊天室redis数据
                 Room::cleanData();
             }
@@ -92,23 +93,23 @@ class EasySwooleEvent implements Event
         $swooleServer->addProcess($process);
         // }
 
-        //amqp消费自定义进程
-        // $arg = [
-        //     'type' => 'direct',
-        //     'exchange' => 'direct_logs',
-        //     'queue' => 'queue',
-        //     'routeKey' => 'test',
-        //     'class' => TestJob::class //要执行的任务类
-        // ];
-        // $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
-        // $swooleServer->addProcess($amqpConsumeProcess);
+        /*//amqp消费自定义进程
+        $arg = [
+            'type' => 'direct',
+            'exchange' => 'direct_logs',
+            'queue' => 'queue',
+            'routeKey' => 'test',
+            'class' => TestJob::class //要执行的任务类
+        ];
+        $amqpConsumeProcess = (new AmqpConsume('AmqpConsume', $arg))->getProcess();
+        $swooleServer->addProcess($amqpConsumeProcess);*/
 
         //websocket控制器
         if ($serverType == EASYSWOOLE_WEB_SOCKET_SERVER) {
             //添加聊天订阅消息子进程
             $chatSubscribeProcess = (new ChatSubscribe())->getProcess();
             $swooleServer->addProcess($chatSubscribeProcess);
-            
+
             $config = new \EasySwoole\Socket\Config();
             $config->setType($config::WEB_SOCKET);
             $config->setParser(new WebSocketParser());
@@ -120,6 +121,10 @@ class EasySwooleEvent implements Event
             });
             $register->set(EventRegister::onClose, [WebSocketEvent::class, 'onClose']);
         }
+
+        //注册AtomicLimit限流器
+        AtomicLimit::getInstance()->addItem('api')->setMax(5);
+        AtomicLimit::getInstance()->enableProcessAutoRestore($swooleServer, 10 * 1000);
     }
 
     public static function onRequest(Request $request, Response $response): bool
