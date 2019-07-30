@@ -16,6 +16,7 @@ use App\Dispatch\DispatchHandler\NsqDispatch;
 use App\Dispatch\DispatchHandler\RedisDispatch;
 use App\Dispatch\Job\TestJob;
 use App\Libs\Publisher;
+use App\Libs\Response;
 use App\Middleware\CorsMiddleware;
 use App\Middleware\ValidateCsrfToken;
 use App\Process\HotReload;
@@ -40,7 +41,7 @@ class Index extends AbstractController
 {
     public function index()
     {
-        $this->writeJson(200, 'hello world');
+        $this->writeJson(200, 1,'hello world');
     }
 
     /**
@@ -333,5 +334,21 @@ class Index extends AbstractController
         }else{
             pp('请求频繁');
         }
+    }
+
+    public function test()
+    {
+        go(function(){
+            $i=0;
+            while(1){
+                file_put_contents('/tmp/test.log','test'.PHP_EOL,FILE_APPEND);
+                $i++;
+                if($i>=20){
+                    break;
+                }
+                \co::sleep(1);
+            }
+        });
+        pp('main goroutine end');
     }
 }
