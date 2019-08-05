@@ -22,13 +22,9 @@ class SplBean implements \JsonSerializable
     const FILTER_NULL = 3;
     const FILTER_EMPTY = 4;
 
-    private $_keyMap = [];
-    private $_classMap = [];
 
     public function __construct(array $data = null, $autoCreateProperty = false)
     {
-        $this->_keyMap = $this->setKeyMapping();
-        $this->_classMap = $this->setClassMapping();
         if ($data) {
             $this->arrayToBean($data, $autoCreateProperty);
         }
@@ -192,7 +188,7 @@ class SplBean implements \JsonSerializable
         $keys = $this->allProperty();
         $ref = new \ReflectionClass(static::class);
         $fields = array_keys($ref->getDefaultProperties());
-        $fields = array_merge($fields, array_values($this->_keyMap));
+        $fields = array_merge($fields, array_values($this->setKeyMapping()));
         // 多余的key
         $extra = array_diff($keys, $fields);
 
@@ -203,30 +199,28 @@ class SplBean implements \JsonSerializable
 
     private function classMap()
     {
-        if (!empty($this->_classMap)) {
-            $propertyList = $this->allProperty();
-            foreach ($this->_classMap as $property => $class) {
-                if (in_array($property, $propertyList)) {
-                    $val = $this->$property;
-                    $force = true;
-                    if (strpos($class, '@') !== false) {
-                        $force = false;
-                        $class = substr($class, 1);
+        $propertyList = $this->allProperty();
+        foreach ($this->setClassMapping() as $property => $class) {
+            if (in_array($property, $propertyList)) {
+                $val = $this->$property;
+                $force = true;
+                if (strpos($class, '@') !== false) {
+                    $force = false;
+                    $class = substr($class, 1);
+                }
+                if (is_object($val)) {
+                    if (!$val instanceof $class) {
+                        throw new Exception("value for property:{$property} dot not match in " . (static::class));
                     }
-                    if (is_object($val)) {
-                        if (!$val instanceof $class) {
-                            throw new Exception("value for property:{$property} dot not match in " . (static::class));
-                        }
-                    } else if ($val === null) {
-                        if ($force) {
-                            $this->$property = $this->createClass($class);
-                        }
-                    } else {
-                        $this->$property = $this->createClass($class, $val);
+                } else if ($val === null) {
+                    if ($force) {
+                        $this->$property = $this->createClass($class);
                     }
                 } else {
-                    throw new Exception("property:{$property} not exist in " . (static::class));
+                    $this->$property = $this->createClass($class, $val);
                 }
+            } else {
+                throw new Exception("property:{$property} not exist in " . (static::class));
             }
         }
     }
@@ -252,12 +246,10 @@ class SplBean implements \JsonSerializable
      */
     final private function beanKeyMap(array $array): array
     {
-        if (!empty($this->_keyMap)) {
-            foreach ($this->_keyMap as $beanKey => $dataKey) {
-                if (array_key_exists($beanKey, $array)) {
-                    $array[$dataKey] = $array[$beanKey];
-                    unset($array[$beanKey]);
-                }
+        foreach ($this->setKeyMapping() as $dataKey => $beanKey) {
+            if (array_key_exists($beanKey, $array)) {
+                $array[$dataKey] = $array[$beanKey];
+                unset($array[$beanKey]);
             }
         }
         return $array;
@@ -272,12 +264,10 @@ class SplBean implements \JsonSerializable
      */
     final private function dataKeyMap(array $array): array
     {
-        if (!empty($this->_keyMap)) {
-            foreach ($this->_keyMap as $beanKey => $dataKey) {
-                if (array_key_exists($dataKey, $array)) {
-                    $array[$beanKey] = $array[$dataKey];
-                    unset($array[$dataKey]);
-                }
+        foreach ($this->setKeyMapping() as $dataKey => $beanKey) {
+            if (array_key_exists($dataKey, $array)) {
+                $array[$beanKey] = $array[$dataKey];
+                unset($array[$dataKey]);
             }
         }
         return $array;

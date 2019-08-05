@@ -10,10 +10,9 @@ class SplArrayConfig extends AbstractConfig
 {
     private $splArray;
 
-    function __construct(bool $isDev = true)
+    function __construct()
     {
         $this->splArray = new SplArray();
-        parent::__construct($isDev);
     }
 
     function getConf($key = null)

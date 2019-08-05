@@ -27,6 +27,7 @@ use App\Utility\Pool\RedisPool;
 use EasySwoole\AtomicLimit\AtomicLimit;
 use EasySwoole\Component\Di;
 use EasySwoole\EasySwoole\Config;
+use EasySwoole\EasySwoole\ServerManager;
 use EasySwoole\EasySwoole\Swoole\Task\TaskManager;
 use EasySwoole\FastCache\Cache;
 use EasySwoole\Http\AbstractInterface\Controller;
@@ -39,8 +40,33 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class Index extends AbstractController
 {
+    private static $arr = [];
+
+    private $tmp = '';
+
     public function index()
     {
+        // $this->tmp = time();
+        // pp('执行sleep前'.$this->tmp);
+        // Coroutine::sleep(2);
+        // pp('执行sleep后'.$this->tmp);
+
+
+        // self::$arr['foo'] = time();
+        // pp('执行sleep前'.self::$arr['foo']);
+        // Coroutine::sleep(10);
+        // pp('执行sleep后'.self::$arr['foo']);
+
+        $swooleServer = ServerManager::getInstance()->getSwooleServer();
+        pp("workerid:".$swooleServer->worker_id);
+        go(function(){
+            pp(\co::getCid());
+        });
+
+        // $swooleServer = ServerManager::getInstance()->getSwooleServer();
+        // pp($swooleServer->worker_id);
+        // self::$arr[] = time();
+        // pp(self::$arr);
         $this->writeJson(200, 1,'hello world');
     }
 
