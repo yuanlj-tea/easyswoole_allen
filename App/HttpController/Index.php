@@ -102,7 +102,7 @@ class Index extends AbstractController
     {
         RedisPool::invoke(function (RedisObject $redis) {
             $key = 'user:1:api_count';
-            $limit = 1;
+            $limit = 10;
 
             $check = $redis->exists($key);
             if ($check) {
@@ -114,7 +114,7 @@ class Index extends AbstractController
                 }
             } else {
                 $redis->incr($key);
-                $redis->expire($key, 2);
+                $redis->expire($key, 60);
             }
 
             $count = $redis->get($key);
