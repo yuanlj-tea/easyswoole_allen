@@ -144,6 +144,9 @@ var chat = {
         this.data.wSock.onmessage = function (event) {
             var d = jQuery.parseJSON(event.data);
             switch (d.code) {
+                case 0:
+                    chat.addChatLine('systerm_msg', d.data, d.data.roomid);
+                    break;
                 case 1:
                     if (d.data.mine) {
                         console.log(d.data.name);
