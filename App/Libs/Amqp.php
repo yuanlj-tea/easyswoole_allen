@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use EasySwoole\EasySwoole\Config;
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
@@ -28,13 +29,13 @@ abstract class Amqp
 
     /**
      * 链接
-     * @var
+     * @var AMQPStreamConnection
      */
     public $connection;
 
     /**
      * 信道
-     * @var
+     * @var AMQPChannel
      */
     public $channel;
 
@@ -84,9 +85,9 @@ abstract class Amqp
 
     /**
      * Amqp constructor.
-     * @param $exchangeName 交换机名
-     * @param $queueName 队列名
-     * @param $routeKey 路由键
+     * @param $exchangeName string 交换机名
+     * @param $queueName string 队列名
+     * @param $routeKey string 路由键
      * @param string $exchangeType 类型
      * @param array $config 连接配置参数
      */
