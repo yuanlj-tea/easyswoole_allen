@@ -13,6 +13,11 @@ var cdiv = {
 	render : function(template,params){
 		var arr = [];
 		switch(template){
+			case 'systerm_msg':
+				arr = [
+					'<div class="chat-status chat-system-notice">',params.newmessage,'</div>'
+				];
+				break;
 			case 'mymessage':
 				arr = [
 					'<div style="display: block;" class="msg-box"><div class="chat-item me"><div class="clearfix"><div class="avatar"><div class="normal user-avatar" style="background-image: url(',params.avatar,');"></div></div><div class="msg-bubble-box"><div class="msg-bubble-area"><div><div class="msg-bubble"><pre class="text">', params.newmessage,'</pre></div></div></div></div></div></div></div>'

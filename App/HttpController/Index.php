@@ -37,6 +37,7 @@ use Swlib\Saber;
 use Swlib\SaberGM;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use App\Libs\Facades\Room;
 
 class Index extends AbstractController
 {
@@ -58,8 +59,8 @@ class Index extends AbstractController
         // pp('执行sleep后'.self::$arr['foo']);
 
         $swooleServer = ServerManager::getInstance()->getSwooleServer();
-        pp("workerid:".$swooleServer->worker_id);
-        go(function(){
+        pp("workerid:" . $swooleServer->worker_id);
+        go(function () {
             pp(\co::getCid());
         });
 
@@ -67,7 +68,7 @@ class Index extends AbstractController
         // pp($swooleServer->worker_id);
         // self::$arr[] = time();
         // pp(self::$arr);
-        $this->writeJson(200, 1,'hello world');
+        $this->writeJson(200, 1, 'hello world');
     }
 
     /**
@@ -316,11 +317,11 @@ class Index extends AbstractController
     public function testCsp()
     {
         $csp = new \EasySwoole\Component\Csp();
-        $csp->add('t1',function (){
+        $csp->add('t1', function () {
             \co::sleep(0.1);
             return 't1 result';
         });
-        $csp->add('t2',function (){
+        $csp->add('t2', function () {
             \co::sleep(0.1);
             return 't2 result';
         });
@@ -335,14 +336,14 @@ class Index extends AbstractController
         $wait = new \EasySwoole\Component\WaitGroup();
 
         $wait->add();
-        go(function ()use($wait,&$ret){
+        go(function () use ($wait, &$ret) {
             \co::sleep(0.1);
             $ret[] = time();
             $wait->done();
         });
 
         $wait->add();
-        go(function ()use($wait,&$ret){
+        go(function () use ($wait, &$ret) {
             \co::sleep(2);
             $ret[] = time();
             $wait->done();
@@ -355,26 +356,50 @@ class Index extends AbstractController
 
     public function testAtomicLimit()
     {
-        if(AtomicLimit::isAllow('api')){
+        if (AtomicLimit::isAllow('api')) {
             pp('succ');
-        }else{
+        } else {
             pp('请求频繁');
         }
     }
 
     public function test()
     {
-        go(function(){
-            $i=0;
-            while(1){
-                file_put_contents('/tmp/test.log','test'.PHP_EOL,FILE_APPEND);
+        go(function () {
+            $i = 0;
+            while (1) {
+                file_put_contents('/tmp/test.log', 'test' . PHP_EOL, FILE_APPEND);
                 $i++;
-                if($i>=20){
+                if ($i >= 20) {
                     break;
                 }
                 \co::sleep(1);
             }
         });
         pp('main goroutine end');
+    }
+
+    public function sendWsSystemMsg()
+    {
+        $request = $this->request();
+        $param = $request->getRequestParam('msg');
+        $msg = isset($param) && !empty($param) ? $param : 'test';
+
+        $wsServer = ServerManager::getInstance()->getSwooleServer();
+        $pushMsg['code'] = 0; //code:0,系统消息
+        $pushMsg['msg'] = '系统消息：' . $msg;
+        $pushMsg['data']['mine'] = 0;
+        $pushMsg['data']['newmessage'] = '系统消息：' . $msg;
+
+        $roomOnlineUser = Room::getOnlineUsers();
+        foreach ($roomOnlineUser as $k => $v) {
+            foreach ($v as $vk => $vv) {
+                $pushMsg['data']['roomid'] = $k;
+                if ($wsServer->isEstablished($vv['fd'])) {
+                    $wsServer->push($vv['fd'], json_encode($pushMsg));
+                }
+            }
+        }
+        return $this->writeJson(200, "发送系统消息成功");
     }
 }

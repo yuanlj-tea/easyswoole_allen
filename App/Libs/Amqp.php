@@ -154,7 +154,26 @@ abstract class Amqp
         //durable：true、false true：在服务器重启时，能够存活
         //exclusive ：是否为当前连接的专用队列，在连接断开后，会自动删除该队列
         //autodelete：当没有任何消费者使用时，自动删除该队列
+        //nowait:true:执行后不需要等结果，默认为false
         //arguments: 自定义规则
+        //参数参考：https://blog.csdn.net/wwwwxyxy/article/details/84654787
+        /*$arguments = new AMQPTable([
+
+                'x-message-ttl'          => 10000,  // 延迟时间 （毫秒）创建queue时设置该参数可指定消息在该queue中待多久，可根据x-dead-letter-routing-key和x-dead-letter-exchange生成可延迟的死信队列。
+
+                'x-expires'              => 26000,  // 队列存活时间  如果一个队列开始没有设置存活时间，后面又设置是无效的。
+
+                'x-dead-letter-exchange' => 'exchange_direct_ttl3',  // 延迟结束后指向交换机（死信收容交换机）
+
+                'x-dead-letter-queue'    => 'queue_ttl3',  // 延迟结束后指向队列（死信收容队列）,
+
+                //'x-dead-letter-routing-key' => 'queue_ttl3',  // 设置routing-key
+
+                //'x-max-priority'=>'10' //声明优先级队列.表示队列应该支持的最大优先级。建议使用1到10之间.该参数会造成额外的CPU消耗。
+
+            ]
+
+        );*/
         $this->channel->queue_declare($this->queueName, false, true, false, false);
     }
 
